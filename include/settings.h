@@ -1,4 +1,5 @@
 #pragma once
+#include "SDL_scancode.h"
 
 namespace gpr5300
 {
@@ -14,7 +15,13 @@ namespace gpr5300
 
 	constexpr float YAW = -90.0f;
 	constexpr float PITCH = 0.0f;
-	constexpr float SPEED = 50.0f;
-	constexpr float SENSITIVITY = 0.1f;
 	constexpr float ZOOM = 45.0f;
+
+	constexpr float SPEED = 5.0f;
+	constexpr float CAM_INCREASE_KEY = SDL_SCANCODE_2;
+	constexpr  float MAX_CAM_SPEED = 100;
+	constexpr float CAM_DECREASE_KEY = SDL_SCANCODE_1;
+	constexpr  float MIN_CAM_SPEED = 0.1;
+	constexpr float SENSITIVITY = 0.1f;
+
 }
