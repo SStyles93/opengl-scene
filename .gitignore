@@ -1,4 +1,4 @@
 [bB]uild/
-[dD]ata/
+[dD]ata/*
 ![dD]ata/shaders/*
-.vscode/
+.vs
