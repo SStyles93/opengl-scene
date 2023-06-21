@@ -26,8 +26,9 @@ namespace gpr5300
         unsigned int quadVAO = 0;
         unsigned int quadVBO;
 
-        glm::vec3 lightPos{ 0.5f, 0.5f, 0.5f };
+        glm::vec3 lightPos{ 0.0f, 0.0f, 3.0f };
         glm::mat4 model;
+        glm::mat4 model2;
     };
 
     void normal_test::renderQuad()
@@ -120,6 +121,7 @@ namespace gpr5300
 
     void normal_test::Begin()
     {
+        time_ = 0.0f;
         // configure global opengl state
         // -----------------------------
         glEnable(GL_DEPTH_TEST);
@@ -140,6 +142,7 @@ namespace gpr5300
         pipeline.setInt("normalMap", 1);
 
         model = glm::mat4(1.0f);
+        model2 = glm::mat4(1.0f);
     }
 
     void normal_test::Update(float dt)
@@ -157,7 +160,7 @@ namespace gpr5300
         pipeline.setMat4("projection", projection);
         pipeline.setMat4("view", view);
         // render normal-mapped quad
-        model = glm::rotate(model, glm::radians(time_ * 0.00000001f), glm::normalize(glm::vec3(0.0, 1.0, 0.0))); // rotate the quad to show normal mapping from multiple directions
+        //model = glm::rotate(model, glm::radians(time_ * 0.00000001f), glm::normalize(glm::vec3(0.0, 1.0, 0.0))); // rotate the quad to show normal mapping from multiple directions
         pipeline.setMat4("model", model);
         pipeline.setVec3("viewPos", camera->Position);
         pipeline.setVec3("lightPos", lightPos);
@@ -168,7 +171,8 @@ namespace gpr5300
         renderQuad();
 
         // render light source (simply re-renders a smaller plane at the light's position for debugging/visualization)
-        glm::mat4 model2 = glm::mat4(1.0f);
+        const float radiusFromCenter = 1.0f;
+        lightPos = glm::vec3(radiusFromCenter * std::sin(time_), 0.0f, radiusFromCenter * std::cos(time_));
         model2 = glm::translate(model2, lightPos);
         model2 = glm::scale(model2, glm::vec3(0.1f));
         pipeline.setMat4("model", model2);

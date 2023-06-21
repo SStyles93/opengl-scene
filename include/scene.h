@@ -34,7 +34,7 @@ namespace gpr5300
 		///Initializes a texture and returns it's ID
 		///</summary>
 		///<param name="filePath">The path at which the texture is located</param>
-		static unsigned int LoadTexture(std::string_view filePath);
+		static unsigned int LoadTexture(std::string_view filePath, bool gammaCorrection = false);
 	};
 
 } // namespace gpr5300
