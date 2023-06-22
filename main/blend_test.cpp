@@ -7,7 +7,7 @@
 
 namespace gpr5300
 {
-	class Hello_blend final : public Scene
+	class blend_test final : public Scene
 	{
     public:
         void Begin() override;
@@ -32,7 +32,7 @@ namespace gpr5300
         };
 	};
 
-    void Hello_blend::Begin()
+    void blend_test::Begin()
     {
     	
         // configure global opengl state
@@ -159,7 +159,7 @@ namespace gpr5300
         shader.setInt("texture", 0);
     }
 
-    void Hello_blend::Update(float dt)
+    void blend_test::Update(float dt)
     {
         std::map<float, glm::vec3> sorted;
         for (unsigned int i = 0; i < windows.size(); i++)
@@ -210,7 +210,7 @@ namespace gpr5300
 
     }
 
-    void Hello_blend::End()
+    void blend_test::End()
     {
         glDeleteVertexArrays(1, &cubeVAO);
         glDeleteVertexArrays(1, &planeVAO);
@@ -222,7 +222,7 @@ namespace gpr5300
 int main(int argc, char** argv)
 {
     gpr5300::Camera camera;
-    gpr5300::Hello_blend scene;
+    gpr5300::blend_test scene;
     scene.camera = &camera;
     gpr5300::Engine engine(&scene);
     engine.Run();

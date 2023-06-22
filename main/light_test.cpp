@@ -17,7 +17,7 @@
 
 namespace gpr5300
 {
-	class HelloCube final : public Scene
+	class light_test final : public Scene
 	{
 	public:
 		void Begin() override;
@@ -147,7 +147,7 @@ namespace gpr5300
 		return textureID;
 	}
 
-	void HelloCube::SetLight(
+	void light_test::SetLight(
 		Pipeline pipeline, glm::vec3 lightPosition,
 		glm::vec3 lightAmbient, glm::vec3 lightdiffuse, glm::vec3 lightSpecular)
 	{
@@ -156,7 +156,7 @@ namespace gpr5300
 		pipeline.setVec3("dirLight.diffuse", lightdiffuse);
 		pipeline.setVec3("dirLight.specular", lightSpecular);
 	}
-	void HelloCube::SetLight(
+	void light_test::SetLight(
 		Pipeline pipeline, glm::vec3 lightPosition,
 		glm::vec3 lightAmbient, glm::vec3 lightDiffuse, glm::vec3 lightSpecular,
 		float lightConstant, float lightLinear, float lightQuadratic)
@@ -170,7 +170,7 @@ namespace gpr5300
 		pipeline.setFloat(fmt::format("pointLights{}.linear", lightCount), lightLinear);
 		pipeline.setFloat(fmt::format("pointLights{}.quadratic", lightCount), lightQuadratic);
 	}
-	void HelloCube::SetLight(Pipeline pipeline, glm::vec3 lightPosition, glm::vec3 lightDirection,
+	void light_test::SetLight(Pipeline pipeline, glm::vec3 lightPosition, glm::vec3 lightDirection,
 		glm::vec3 lightAmbient, glm::vec3 lightDiffuse, glm::vec3 lightSpecular,
 		float lightConstant, float lightLinear, float lightQuadratic,
 		float cutOff, float outerCutOff)
@@ -187,7 +187,7 @@ namespace gpr5300
 		lightingShader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(outerCutOff)));
 	}
 
-	void HelloCube::Begin()
+	void light_test::Begin()
 	{
 		lightingShader = Pipeline("data/shaders/hello_cube/multiple_lights.vert", "data/shaders/hello_cube/multiple_lights.frag");
 		lightCubeShader = Pipeline("data/shaders/hello_cube/light_cube.vert", "data/shaders/hello_cube/light_cube.frag");
@@ -284,7 +284,7 @@ namespace gpr5300
 
 	}
 
-	void HelloCube::End()
+	void light_test::End()
 	{
 		glDeleteVertexArrays(1, &cubeVAO);
 		glDeleteVertexArrays(1, &lightCubeVAO);
@@ -292,7 +292,7 @@ namespace gpr5300
 		//glDeleteBuffers(1, &ebo_);
 	}
 
-	void HelloCube::Update(float dt)
+	void light_test::Update(float dt)
 	{
 		//The action here is given to the blinn flag
 		blinn = action;
@@ -387,7 +387,7 @@ namespace gpr5300
 int main(int argc, char** argv)
 {
 	gpr5300::Camera camera;
-	gpr5300::HelloCube scene;
+	gpr5300::light_test scene;
 	scene.camera = &camera;
 	gpr5300::Engine engine(&scene);
 	engine.Run();

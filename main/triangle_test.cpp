@@ -11,7 +11,7 @@
 
 namespace gpr5300
 {
-    class HelloTriangle final : public Scene
+    class triangle_test final : public Scene
     {
     public:
         void Begin() override;
@@ -24,7 +24,7 @@ namespace gpr5300
         GLuint vao_ = 0;
     };
 
-    void HelloTriangle::Begin()
+    void triangle_test::Begin()
     {
         //Load shaders
         const auto vertexContent = LoadFile("data/shaders/hello_triangle/triangle.vert");
@@ -68,7 +68,7 @@ namespace gpr5300
         glCreateVertexArrays(1, &vao_);
     }
 
-    void HelloTriangle::End()
+    void triangle_test::End()
     {
         //Unload program/pipeline
         glDeleteProgram(lightProgram_);
@@ -80,7 +80,7 @@ namespace gpr5300
 
     }
 
-    void HelloTriangle::Update(float dt)
+    void triangle_test::Update(float dt)
     {
         //Draw program
         glUseProgram(lightProgram_);
@@ -90,7 +90,7 @@ namespace gpr5300
 }
 int main(int argc, char** argv)
 {
-    gpr5300::HelloTriangle scene;
+    gpr5300::triangle_test scene;
     gpr5300::Engine engine(&scene);
     engine.Run();
 

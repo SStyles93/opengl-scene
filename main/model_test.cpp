@@ -6,7 +6,7 @@
 
 namespace gpr5300
 {
-	class HelloModel final : public Scene
+	class model_test final : public Scene
 	{
 		void Begin() override;
 		void End() override;
@@ -16,7 +16,7 @@ namespace gpr5300
 		Model model_{};
 	};
 
-	void HelloModel::Begin()
+	void model_test::Begin()
 	{
 		//Enable depth testing
 		glEnable(GL_DEPTH_TEST);
@@ -26,14 +26,14 @@ namespace gpr5300
 
 		model_ = Model("data/objects/backpack.obj", false);
 	};
-	void HelloModel::End()
+	void model_test::End()
 	{
 		//glDeleteVertexArrays(1, &cubeVAO);
 		//glDeleteVertexArrays(1, &lightCubeVAO);
 		//glDeleteBuffers(1, &VBO);
 		//glDeleteBuffers(1, &ebo_);
 	};
-	void HelloModel::Update(float dt)
+	void model_test::Update(float dt)
 	{
 		// don't forget to enable shader before setting uniforms
 		modelPipeline_.use();
@@ -55,7 +55,7 @@ namespace gpr5300
 }//namespace
 int main(int argc, char** argv)
 {
-	gpr5300::HelloModel scene;
+	gpr5300::model_test scene;
 	gpr5300::Camera camera;
 	scene.camera = &camera;
 	gpr5300::Engine engine(&scene);
