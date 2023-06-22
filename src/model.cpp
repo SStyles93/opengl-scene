@@ -49,7 +49,7 @@ namespace gpr5300
 		gammaCorrection = false;
 	};
 	// constructor, expects a filepath to a 3D model.
-	Model::Model(const char* path, bool gamma = false) : gammaCorrection(gamma)
+	Model::Model(const char* path, bool gamma) : gammaCorrection(gamma)
 	{
 		loadModel(path);
 	}

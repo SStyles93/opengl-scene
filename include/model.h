@@ -30,7 +30,7 @@ namespace gpr5300
         std::string directory;
 
         Model();
-        Model(const char* path, bool gamma);
+        Model(const char* path, bool gamma = false);
 
         void Draw(Pipeline& pipeline);
 
