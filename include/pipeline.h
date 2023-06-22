@@ -14,7 +14,7 @@ namespace gpr5300
     public:
         unsigned int ID;
         Pipeline();
-        Pipeline(const char* vertexPath, const char* fragmentPath);
+        Pipeline(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr);
         // activate the shader
         // ------------------------------------------------------------------------
         void use() const;

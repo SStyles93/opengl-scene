@@ -18,10 +18,12 @@ namespace gpr5300
 	constexpr float ZOOM = 45.0f;
 
 	constexpr float SPEED = 5.0f;
-	constexpr float CAM_INCREASE_KEY = SDL_SCANCODE_2;
-	constexpr  float MAX_CAM_SPEED = 100;
-	constexpr float CAM_DECREASE_KEY = SDL_SCANCODE_1;
-	constexpr  float MIN_CAM_SPEED = 0.1;
+	constexpr  float MAX_CAM_SPEED = 100.0f;
+	constexpr  float MIN_CAM_SPEED = 0.1f;
 	constexpr float SENSITIVITY = 0.1f;
+
+	constexpr int CAM_SPEED_INCREASE_KEY = SDL_SCANCODE_2;
+	constexpr int CAM_SPEED_DECREASE_KEY = SDL_SCANCODE_1;
+	constexpr int ACTION_KEY = SDL_SCANCODE_SPACE;
 
 }

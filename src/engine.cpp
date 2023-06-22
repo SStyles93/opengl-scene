@@ -90,7 +90,7 @@ namespace gpr5300
 					break;
 				case SDL_KEYDOWN:
 					//Increase camera movement speed
-					if (event.key.keysym.scancode == CAM_INCREASE_KEY && scene_->camera->MovementSpeed < MAX_CAM_SPEED)
+					if (event.key.keysym.scancode == CAM_SPEED_INCREASE_KEY && scene_->camera->MovementSpeed < MAX_CAM_SPEED)
 					{
 						scene_->camera->MovementSpeed += 10;
 						std::cout << scene_->camera->MovementSpeed;
@@ -99,7 +99,7 @@ namespace gpr5300
 						scene_->camera->MovementSpeed = MAX_CAM_SPEED;
 					}
 					//Decrease camera movement speed 
-					if (event.key.keysym.scancode == CAM_DECREASE_KEY && scene_->camera->MovementSpeed > MIN_CAM_SPEED)
+					if (event.key.keysym.scancode == CAM_SPEED_DECREASE_KEY && scene_->camera->MovementSpeed > MIN_CAM_SPEED)
 					{
 						scene_->camera->MovementSpeed -= 10;
 						std::cout << scene_->camera->MovementSpeed;
@@ -132,7 +132,7 @@ namespace gpr5300
 			}
 
 			//Action given to the scene
-			scene_->action = static_cast<bool>(keyboardState[SDL_SCANCODE_B]);
+			scene_->action = static_cast<bool>(keyboardState[ACTION_KEY]);
 
 			glClearColor(0, 0, 0, 0);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
