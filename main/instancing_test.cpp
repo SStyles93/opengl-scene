@@ -75,7 +75,6 @@ namespace gpr5300
 
         // configure instanced array
         // -------------------------
-        
         glGenBuffers(1, &buffer);
         glBindBuffer(GL_ARRAY_BUFFER, buffer);
         glBufferData(GL_ARRAY_BUFFER, amount * sizeof(glm::mat4), &modelMatrices[0], GL_STATIC_DRAW);
