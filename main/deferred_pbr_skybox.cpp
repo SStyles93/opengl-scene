@@ -6,7 +6,7 @@
 
 namespace gpr5300
 {
-	class deferred_pbr_cubemap : public Scene
+	class deferred_pbr_skybox : public Scene
 	{
 	public:
 		void Begin() override;
@@ -97,7 +97,7 @@ namespace gpr5300
 		unsigned int loadCubemap(std::vector<std::string> faces);
 	};
 
-	unsigned int deferred_pbr_cubemap::loadCubemap(std::vector<std::string> faces)
+	unsigned int deferred_pbr_skybox::loadCubemap(std::vector<std::string> faces)
 	{
 		stbi_set_flip_vertically_on_load(false);
 		unsigned int textureID;
@@ -127,7 +127,7 @@ namespace gpr5300
 
 		return textureID;
 	}
-	void deferred_pbr_cubemap::renderImage()
+	void deferred_pbr_skybox::renderImage()
 	{
 		if (quadVAO == 0)
 		{
@@ -153,7 +153,7 @@ namespace gpr5300
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		glBindVertexArray(0);
 	}
-	void deferred_pbr_cubemap::renderCube()
+	void deferred_pbr_skybox::renderCube()
 	{
 		// initialize (if necessary)
 		if (cubeVAO == 0)
@@ -224,7 +224,7 @@ namespace gpr5300
 		glBindVertexArray(0);
 	}
 
-	void deferred_pbr_cubemap::Begin()
+	void deferred_pbr_skybox::Begin()
 	{
 		// tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
 		stbi_set_flip_vertically_on_load(true);
@@ -240,16 +240,16 @@ namespace gpr5300
 		// build and compile shaders
 		//Geometry pass 0
 		pipelines.emplace_back(
-			"data/shaders/deferred_pbr_cubemap/g_buffer_inst1.vert",
-			"data/shaders/deferred_pbr_cubemap/g_buffer_inst1.frag");
+			"data/shaders/deferred_pbr_skybox/g_buffer_inst1.vert",
+			"data/shaders/deferred_pbr_skybox/g_buffer_inst1.frag");
 		//Lighting pass 1
 		pipelines.emplace_back(
-			"data/shaders/deferred_pbr_cubemap/deferred_shading_inst1.vert",
-			"data/shaders/deferred_pbr_cubemap/deferred_shading_inst1.frag");
+			"data/shaders/deferred_pbr_skybox/deferred_shading_inst1.vert",
+			"data/shaders/deferred_pbr_skybox/deferred_shading_inst1.frag");
 		//Light Boxes 2
 		pipelines.emplace_back(
-			"data/shaders/deferred_pbr_cubemap/deferred_light_box_inst1.vert",
-			"data/shaders/deferred_pbr_cubemap/deferred_light_box_inst1.frag");
+			"data/shaders/deferred_pbr_skybox/deferred_light_box_inst1.vert",
+			"data/shaders/deferred_pbr_skybox/deferred_light_box_inst1.frag");
 		//Skybox 3
 		pipelines.emplace_back(
 			"data/shaders/cubemap/skybox.vert",
@@ -453,7 +453,7 @@ namespace gpr5300
 
 	}
 
-	void deferred_pbr_cubemap::Update(float dt)
+	void deferred_pbr_skybox::Update(float dt)
 	{
 		time_ += dt;
 
@@ -578,7 +578,7 @@ namespace gpr5300
 
 	}
 
-	void deferred_pbr_cubemap::End()
+	void deferred_pbr_skybox::End()
 	{
 		glDeleteVertexArrays(1, &cubeVAO);
 		glDeleteBuffers(1, &cubeVBO);
@@ -593,7 +593,7 @@ namespace gpr5300
 int main(int argc, char** argv)
 {
 	gpr5300::Camera camera;
-	gpr5300::deferred_pbr_cubemap scene;
+	gpr5300::deferred_pbr_skybox scene;
 	scene.camera = &camera;
 	gpr5300::Engine engine(&scene);
 	engine.Run();
