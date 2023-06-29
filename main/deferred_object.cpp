@@ -6,48 +6,37 @@
 
 namespace gpr5300
 {
-	class AbstractionScene_01 : public Scene
+	class deferred_object : public Scene
 	{
 	public:
 		void Begin() override;
 		void Update(float dt) override;
 		void End() override;
-
-		void renderCube();
-		void renderQuad();
-
 		std::vector<Pipeline> pipelines{};
+		std::vector<Object> objects{};
 
+#pragma region Copied
 		unsigned int gBuffer;
 		unsigned int gPosition, gNormal, gAlbedo, gARM;
 		unsigned int rboDepth;
+
+		const unsigned int NR_LIGHTS = 32;
+		std::vector<glm::vec3> lightPositions;
+		std::vector<glm::vec3> lightColors;
+
+		void renderCube();
+		void renderQuad();
 
 		unsigned int quadVAO = 0;
 		unsigned int quadVBO;
 
 		unsigned int cubeVAO = 0;
 		unsigned int cubeVBO = 0;
-
-		const unsigned int NR_LIGHTS = 32;
-		std::vector<glm::vec3> lightPositions;
-		std::vector<glm::vec3> lightColors;
-
-		struct ModelMatrices
-		{
-			glm::mat4 model{};
-			glm::mat4 normal{};
-		};
-		std::vector<ModelMatrices> modelMatrices;
-		unsigned int amount = 10;
-
-		float time_{};
-		unsigned int buffer{};
-		unsigned int VAO{};
-		Model backpack;
+#pragma endregion
 
 	};
 
-	void AbstractionScene_01::renderQuad()
+	void deferred_object::renderQuad()
 	{
 		if (quadVAO == 0)
 		{
@@ -73,7 +62,7 @@ namespace gpr5300
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		glBindVertexArray(0);
 	}
-	void AbstractionScene_01::renderCube()
+	void deferred_object::renderCube()
 	{
 		// initialize (if necessary)
 		if (cubeVAO == 0)
@@ -144,7 +133,7 @@ namespace gpr5300
 		glBindVertexArray(0);
 	}
 
-	void AbstractionScene_01::Begin()
+	void deferred_object::Begin()
 	{
 		// tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
 		stbi_set_flip_vertically_on_load(true);
@@ -156,94 +145,26 @@ namespace gpr5300
 		// build and compile shaders
 		// -------------------------
 		pipelines.emplace_back(
-			"data/shaders/01_AbstractionScene/g_buffer_inst1.vert",
-			"data/shaders/01_AbstractionScene/g_buffer_inst1.frag");
+			"data/shaders/deferred_object/g_buffer_inst.vert",
+			"data/shaders/deferred_object/g_buffer_inst.frag");
 
 		pipelines.emplace_back(
-			"data/shaders/01_AbstractionScene/deferred_shading_inst1.vert",
-			"data/shaders/01_AbstractionScene/deferred_shading_inst1.frag");
+			"data/shaders/deferred_object/deferred_shading_inst.vert",
+			"data/shaders/deferred_object/deferred_shading_inst.frag");
 		pipelines.emplace_back(
-			"data/shaders/01_AbstractionScene/deferred_light_box_inst1.vert",
-			"data/shaders/01_AbstractionScene/deferred_light_box_inst1.frag");
+			"data/shaders/deferred_object/deferred_light_box_inst.vert",
+			"data/shaders/deferred_object/deferred_light_box_inst.frag");
 
-		backpack = Model("data/objects/backpack.obj");
+		Model backpackModel = Model("data/objects/backpack.obj");
+		Model rockModel = Model("data/objects/rock.obj");
+		Object backpack(backpackModel, pipelines[0]);
+		Object rock(rockModel, pipelines[0]);
 
-		modelMatrices.resize(amount);
-		srand(static_cast<unsigned int>(time_)); // initialize random seed
-		float radius = 1.5f;
-		float offset = 0.25f;
-		for (unsigned int i = 0; i < amount; i++)
+		for (size_t i = 0; i < 5; i++)
 		{
-			glm::mat4 model = glm::mat4(1.0f);
-			// 1. translation: displace along circle with 'radius' in range [-offset, offset]
-			float angle = (float)i / (float)amount * 360.0f;
-			float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-			float x = sin(angle) * radius + displacement;
-			displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-			float y = displacement * 0.4f; // keep height of asteroid field smaller compared to width of x and z
-			displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-			float z = cos(angle) * radius + displacement;
-
-			model = glm::translate(model, glm::vec3(x, y, z));
-
-			// 2. scale: Scale between 0.05 and 0.25f
-			float scale = 1.0f; /*static_cast<float>((rand() % 20) / 100.0 + 0.05);*/
-
-			model = glm::scale(model, glm::vec3(scale));
-
-			// 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
-			float rotAngle = static_cast<float>((rand() % 360));
-
-			model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
-
-			//4. now add to list of matrices
-			modelMatrices[i].model = model;
-			modelMatrices[i].normal = glm::transpose(glm::inverse(model));
+			objects.push_back(backpack);
+			objects.push_back(rock);
 		}
-
-		// configure instanced array
-		// -------------------------
-		glGenBuffers(1, &buffer);
-		glBindBuffer(GL_ARRAY_BUFFER, buffer);
-		glBufferData(GL_ARRAY_BUFFER, amount * sizeof(ModelMatrices), &modelMatrices[0], GL_STATIC_DRAW);
-
-		for (unsigned int i = 0; i < backpack.meshes.size(); i++)
-		{
-			VAO = backpack.meshes[i].VAO;
-			glBindVertexArray(VAO);
-			// set attribute pointers for matrix (4 times vec4)
-			glEnableVertexAttribArray(3);
-			glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), nullptr);
-			glEnableVertexAttribArray(4);
-			glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(sizeof(glm::vec4)));
-			glEnableVertexAttribArray(5);
-			glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(2 * sizeof(glm::vec4)));
-			glEnableVertexAttribArray(6);
-			glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(3 * sizeof(glm::vec4)));
-
-			glVertexAttribDivisor(3, 1);
-			glVertexAttribDivisor(4, 1);
-			glVertexAttribDivisor(5, 1);
-			glVertexAttribDivisor(6, 1);
-
-			glEnableVertexAttribArray(7);
-			glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast < void*>(sizeof(glm::mat4)));
-			glEnableVertexAttribArray(8);
-			glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(sizeof(glm::mat4) + sizeof(glm::vec4)));
-			glEnableVertexAttribArray(9);
-			glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(sizeof(glm::mat4) + 2 * sizeof(glm::vec4)));
-			glEnableVertexAttribArray(10);
-			glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(sizeof(glm::mat4) + 3 * sizeof(glm::vec4)));
-
-			glVertexAttribDivisor(7, 1);
-			glVertexAttribDivisor(8, 1);
-			glVertexAttribDivisor(9, 1);
-			glVertexAttribDivisor(10, 1);
-
-			glBindVertexArray(0);
-		}
-
-#pragma region gBuffer Deferred Shading
 
 		// configure g-buffer framebuffer
 		// ------------------------------
@@ -266,18 +187,18 @@ namespace gpr5300
 		// color + specular color buffer
 		glGenTextures(1, &gAlbedo);
 		glBindTexture(GL_TEXTURE_2D, gAlbedo);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gAlbedo, 0);
 		//ARM
 		glGenTextures(1, &gARM);
 		glBindTexture(GL_TEXTURE_2D, gARM);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, gARM, 0);
-
+		
 		// tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
 		unsigned int attachments[4] = {
 			GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2,
@@ -295,8 +216,6 @@ namespace gpr5300
 			std::cout << "Framebuffer not complete!" << std::endl;
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-#pragma endregion
-#pragma region LightBoxes setting
 
 		// lighting info
 		// -------------
@@ -315,8 +234,6 @@ namespace gpr5300
 			lightColors.push_back(glm::vec3(rColor, gColor, bColor));
 		}
 
-#pragma endregion
-
 		// shader configuration
 		// --------------------
 		pipelines[1].use();
@@ -327,10 +244,8 @@ namespace gpr5300
 
 	}
 
-	void AbstractionScene_01::Update(float dt)
+	void deferred_object::Update(float dt)
 	{
-		time_ += dt;
-
 		// render
 		// ------
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -343,27 +258,33 @@ namespace gpr5300
 		glm::mat4 projection = glm::perspective(glm::radians(camera->Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
 		glm::mat4 view = camera->GetViewMatrix();
 		glm::mat4 model = glm::mat4(1.0f);
+		glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(model)));
 
 		pipelines[0].use();
 		pipelines[0].setMat4("projection", projection);
 		pipelines[0].setMat4("view", view);
-
-		for (unsigned int i = 0; i < backpack.meshes.size(); i++)
+		pipelines[0].setMat3("normalMatrix", normalMatrix);
+		float x = -6.0f;
+		float z = 0.0f;
+		for (unsigned int i = 0; i < objects.size(); i++)
 		{
-			backpack.meshes[i].BindMaterial(pipelines[0]);
-			glBindVertexArray(backpack.meshes[i].VAO);
-			glDrawElementsInstanced(
-				GL_TRIANGLES,
-				static_cast<unsigned int>(backpack.meshes[i].indices.size()),
-				GL_UNSIGNED_INT, 0, amount);
-			glBindVertexArray(0);
+			if(i % 2 == 0)
+			{
+				x += 3;
+				z = 0.0f;
+			}else
+			{
+				z = -5;
+			}
+			objects[i].Translate(glm::vec3{ x, 0.0f, z });
+			//objects[i].Rotate(static_cast<float>(45*i));
+			//if(i != 0)
+			//objects[i].Scale(glm::vec3{0.25f/i, 0.25f/i, 0.25f/i});
+			objects[i].Draw();
 		}
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-
-
-#pragma region LightPass
 
 		// 2. lighting pass: calculate lighting by iterating over a screen filled quad pixel-by-pixel using the gbuffer's content.
 		// -----------------------------------------------------------------------------------------------------------------------
@@ -399,40 +320,33 @@ namespace gpr5300
 		// finally render quad
 		renderQuad();
 
-#pragma endregion
+		//// 2.5. copy content of geometry's depth buffer to default framebuffer's depth buffer
+		//// ----------------------------------------------------------------------------------
+		//glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
+		//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // write to default framebuffer
+		//// blit to default framebuffer. Note that this may or may not work as the internal formats of both the FBO and default framebuffer have to match.
+		//// the internal formats are implementation defined. This works on all of my systems, but if it doesn't on yours you'll likely have to write to the 		
+		//// depth buffer in another shader stage (or somehow see to match the default framebuffer's internal format with the FBO's internal format).
+		//glBlitFramebuffer(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-#pragma region Light Boxes
-
-		// 2.5. copy content of geometry's depth buffer to default framebuffer's depth buffer
-		// ----------------------------------------------------------------------------------
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // write to default framebuffer
-		// blit to default framebuffer. Note that this may or may not work as the internal formats of both the FBO and default framebuffer have to match.
-		// the internal formats are implementation defined. This works on all of my systems, but if it doesn't on yours you'll likely have to write to the 		
-		// depth buffer in another shader stage (or somehow see to match the default framebuffer's internal format with the FBO's internal format).
-		glBlitFramebuffer(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		// 3. render lights on top of scene
-		// --------------------------------
-		pipelines[2].use();
-		pipelines[2].setMat4("projection", projection);
-		pipelines[2].setMat4("view", view);
-		for (unsigned int i = 0; i < lightPositions.size(); i++)
-		{
-			model = glm::mat4(1.0f);
-			model = glm::translate(model, lightPositions[i]);
-			model = glm::scale(model, glm::vec3(0.125f));
-			pipelines[2].setMat4("model", model);
-			pipelines[2].setVec3("lightColor", lightColors[i]);
-			renderCube();
-		}
-#pragma endregion
-
+		//// 3. render lights on top of scene
+		//// --------------------------------
+		//pipelines[2].use();
+		//pipelines[2].setMat4("projection", projection);
+		//pipelines[2].setMat4("view", view);
+		//for (unsigned int i = 0; i < lightPositions.size(); i++)
+		//{
+		//	model = glm::mat4(1.0f);
+		//	model = glm::translate(model, lightPositions[i]);
+		//	model = glm::scale(model, glm::vec3(0.125f));
+		//	pipelines[2].setMat4("model", model);
+		//	pipelines[2].setVec3("lightColor", lightColors[i]);
+		//	renderCube();
+		//}
 	}
 
-	void AbstractionScene_01::End()
+	void deferred_object::End()
 	{
 		glDeleteVertexArrays(1, &cubeVAO);
 		glDeleteBuffers(1, &cubeVBO);
@@ -442,7 +356,7 @@ namespace gpr5300
 int main(int argc, char** argv)
 {
 	gpr5300::Camera camera;
-	gpr5300::AbstractionScene_01 scene;
+	gpr5300::deferred_object scene;
 	scene.camera = &camera;
 	gpr5300::Engine engine(&scene);
 	engine.Run();
