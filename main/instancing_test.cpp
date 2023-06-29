@@ -59,15 +59,18 @@ namespace gpr5300
             float y = displacement * 0.4f; // keep height of asteroid field smaller compared to width of x and z
             displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
             float z = cos(angle) * radius + displacement;
+
             model = glm::translate(model, glm::vec3(x, y, z));
 
             // 2. scale: Scale between 0.05 and 0.25f
             float scale = static_cast<float>((rand() % 20) / 100.0 + 0.05);
-            model = glm::scale(model, glm::vec3(scale));
+
+        	model = glm::scale(model, glm::vec3(scale));
 
             // 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
             float rotAngle = static_cast<float>((rand() % 360));
-            model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
+
+        	model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
 
             // 4. now add to list of matrices
             modelMatrices[i] = model;

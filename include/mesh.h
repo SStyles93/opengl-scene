@@ -52,6 +52,7 @@ namespace gpr5300
 
 		// render the mesh
 		void Draw(Pipeline& pipeline);
+		void BindMaterial(Pipeline& pipeline);
 
 	private:
 		// render data 

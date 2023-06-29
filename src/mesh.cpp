@@ -1,4 +1,5 @@
 #include "mesh.h"
+#include "mesh.h"
 
 namespace gpr5300
 {
@@ -14,6 +15,19 @@ namespace gpr5300
 	}
 
 	void Mesh::Draw(Pipeline& pipeline)
+	{
+		BindMaterial(pipeline);
+
+		// draw mesh
+		glBindVertexArray(VAO);
+		glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		// always good practice to set everything back to defaults once configured.
+		glActiveTexture(GL_TEXTURE0);
+	}
+
+	void Mesh::BindMaterial(Pipeline& pipeline)
 	{
 		// bind appropriate textures
 		unsigned int diffuseNr = 1;
@@ -40,14 +54,6 @@ namespace gpr5300
 			// and finally bind the texture
 			glBindTexture(GL_TEXTURE_2D, textures[i].id);
 		}
-
-		// draw mesh
-		glBindVertexArray(VAO);
-		glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-
-		// always good practice to set everything back to defaults once configured.
-		glActiveTexture(GL_TEXTURE0);
 	}
 
 	void Mesh::setupMesh()

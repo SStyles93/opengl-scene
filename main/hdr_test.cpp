@@ -238,7 +238,8 @@ namespace gpr5300
 		hdrPipeline.setFloat("exposure", exposure);
 		renderQuad();
 
-		//std::cout << "hdr: " << (hdr ? "on" : "off") << "| exposure: " << exposure << std::endl;
+		std::cout << "hdr: " << (hdr ? "on" : "off") << "| exposure: " << exposure << std::endl;
+		std::cout.clear();
 
 	}
 
