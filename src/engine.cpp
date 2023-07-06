@@ -132,7 +132,8 @@ namespace gpr5300
 			}
 
 			//Action given to the scene
-			scene_->action = static_cast<bool>(keyboardState[ACTION_KEY]);
+			scene_->action1 = static_cast<bool>(keyboardState[ACTION_KEY1]);
+			scene_->action2 = static_cast<bool>(keyboardState[ACTION_KEY2]);
 
 			glClearColor(0, 0, 0, 0);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

@@ -21,6 +21,12 @@ namespace gpr5300
 {
     //unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma);
 
+    struct ModelMatrices
+    {
+        glm::mat4 model{};
+        glm::mat4 normal{};
+    };
+
     class Model
     {
     public:
@@ -28,11 +34,18 @@ namespace gpr5300
         std::vector<Mesh> meshes;
         bool gammaCorrection;
         std::string directory;
+        unsigned int VBO;
 
         Model();
         Model(const char* path, bool gamma = false);
 
         void Draw(Pipeline& pipeline);
+        void DrawInstances(Pipeline& pipeline, ModelMatrices* modelMatrices, const int count);
+        void DrawInstances(Pipeline& pipeline, ModelMatrices* modelMatrices, const int count, const glm::mat4 projection, const glm::mat4 view);
+        void DrawStaticInstances(Pipeline& pipeline, const int count);
+        void DrawStaticInstances(Pipeline& pipeline, const int count, const glm::mat4 projection, const glm::mat4 view);
+
+        void SetUpVBO(ModelMatrices* modelMatrices, const int count);
 
     private:
 

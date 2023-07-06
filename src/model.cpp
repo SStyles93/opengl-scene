@@ -61,6 +61,121 @@ namespace gpr5300
 			meshes[i].Draw(pipeline);
 	}
 
+	void Model::DrawInstances(Pipeline& pipeline, ModelMatrices* modelMatrices, const int count)
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, count * sizeof(ModelMatrices), modelMatrices);
+
+		for (unsigned int i = 0; i < meshes.size(); i++)
+		{
+			meshes[i].BindMaterial(pipeline);
+			glBindVertexArray(meshes[i].VAO);
+			glDrawElementsInstanced(
+				GL_TRIANGLES,
+				static_cast<unsigned int>(meshes[i].indices.size()),
+				GL_UNSIGNED_INT, 0, count);
+			glBindVertexArray(0);
+		}
+	}
+
+	void Model::DrawInstances(Pipeline& pipeline, ModelMatrices* modelMatrices, const int count, const glm::mat4 projection, const glm::mat4 view)
+	{
+		pipeline.use();
+		pipeline.setMat4("projection", projection);
+		pipeline.setMat4("view", view);
+
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, count * sizeof(ModelMatrices), modelMatrices);
+
+		for (unsigned int i = 0; i < meshes.size(); i++)
+		{
+			meshes[i].BindMaterial(pipeline);
+			glBindVertexArray(meshes[i].VAO);
+			glDrawElementsInstanced(
+				GL_TRIANGLES,
+				static_cast<unsigned int>(meshes[i].indices.size()),
+				GL_UNSIGNED_INT, 0, count);
+			glBindVertexArray(0);
+		}
+	}
+
+	void Model::DrawStaticInstances(Pipeline& pipeline, const int count)
+	{
+		for (unsigned int i = 0; i < meshes.size(); i++)
+		{
+			meshes[i].BindMaterial(pipeline);
+			glBindVertexArray(meshes[i].VAO);
+			glDrawElementsInstanced(
+				GL_TRIANGLES,
+				static_cast<unsigned int>(meshes[i].indices.size()),
+				GL_UNSIGNED_INT, 0, count);
+			glBindVertexArray(0);
+		}
+	}
+
+	void Model::DrawStaticInstances(Pipeline& pipeline, const int count, const glm::mat4 projection, const glm::mat4 view)
+	{
+		pipeline.use();
+		pipeline.setMat4("projection", projection);
+		pipeline.setMat4("view", view);
+
+		for (unsigned int i = 0; i < meshes.size(); i++)
+		{
+			meshes[i].BindMaterial(pipeline);
+			glBindVertexArray(meshes[i].VAO);
+			glDrawElementsInstanced(
+				GL_TRIANGLES,
+				static_cast<unsigned int>(meshes[i].indices.size()),
+				GL_UNSIGNED_INT, 0, count);
+			glBindVertexArray(0);
+		}
+	}
+
+	void Model::SetUpVBO(ModelMatrices* modelMatrices,const int count)
+	{
+		if (VBO != 0)
+			glDeleteBuffers(1, &VBO);
+
+		glGenBuffers(1, &VBO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, count * sizeof(ModelMatrices), &modelMatrices[0], GL_STATIC_DRAW);
+
+		for (unsigned int i = 0; i < meshes.size(); i++)
+		{
+			glBindVertexArray(meshes[i].VAO);
+			// set attribute pointers for matrix (4 times vec4)
+			glEnableVertexAttribArray(3);
+			glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), nullptr);
+			glEnableVertexAttribArray(4);
+			glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(sizeof(glm::vec4)));
+			glEnableVertexAttribArray(5);
+			glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(2 * sizeof(glm::vec4)));
+			glEnableVertexAttribArray(6);
+			glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(3 * sizeof(glm::vec4)));
+
+			glVertexAttribDivisor(3, 1);
+			glVertexAttribDivisor(4, 1);
+			glVertexAttribDivisor(5, 1);
+			glVertexAttribDivisor(6, 1);
+
+			glEnableVertexAttribArray(7);
+			glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast <void*>(sizeof(glm::mat4)));
+			glEnableVertexAttribArray(8);
+			glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(sizeof(glm::mat4) + sizeof(glm::vec4)));
+			glEnableVertexAttribArray(9);
+			glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(sizeof(glm::mat4) + 2 * sizeof(glm::vec4)));
+			glEnableVertexAttribArray(10);
+			glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(sizeof(glm::mat4) + 3 * sizeof(glm::vec4)));
+
+			glVertexAttribDivisor(7, 1);
+			glVertexAttribDivisor(8, 1);
+			glVertexAttribDivisor(9, 1);
+			glVertexAttribDivisor(10, 1);
+
+			glBindVertexArray(0);
+		}
+	}
+
 	// loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
 	void Model::loadModel(const std::string& path)
 	{

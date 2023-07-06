@@ -295,7 +295,7 @@ namespace gpr5300
 	void light_test::Update(float dt)
 	{
 		//The action here is given to the blinn flag
-		blinn = action;
+		blinn = action1;
 
 		// be sure to activate shader when setting uniforms/drawing objects
 		lightingShader.use();

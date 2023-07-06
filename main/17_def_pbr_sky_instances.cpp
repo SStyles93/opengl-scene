@@ -28,23 +28,21 @@ namespace gpr5300
 		unsigned int cubeVAO = 0;
 		unsigned int cubeVBO = 0;
 		
-
 		const unsigned int NR_LIGHTS = 32;
 		std::vector<glm::vec3> lightPositions;
 		std::vector<glm::vec3> lightColors;
 
-		struct ModelMatrices
-		{
-			glm::mat4 model{};
-			glm::mat4 normal{};
-		};
+
 		std::vector<ModelMatrices> modelMatrices;
-		unsigned int amount = 100;
+		std::vector<ModelMatrices> modelMatrices1;
+
+		unsigned int amount = 1;
 
 		float time_{};
 		unsigned int VAO{};
 		unsigned int buffer{};
 		Model backpack;
+		Model rock;
 
 		unsigned int skyboxVAO = 0;
 		unsigned int skyboxVBO = 0;
@@ -232,11 +230,14 @@ namespace gpr5300
 		// configure global opengl state
 		// -----------------------------
 		glEnable(GL_DEPTH_TEST);
-
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_BACK);
+		glFrontFace(GL_CCW);
 		backpack = Model("data/objects/backpack.obj");
+		rock = Model("data/objects/rock.obj");
 
 #pragma region Shader Loading
-		
+
 		// build and compile shaders
 		//Geometry pass 0
 		pipelines.emplace_back(
@@ -260,83 +261,33 @@ namespace gpr5300
 #pragma region ModelMatrices setting
 
 		modelMatrices.resize(amount);
+		modelMatrices1.resize(amount);
+
 		srand(static_cast<unsigned int>(time_)); // initialize random seed
-		float radius = 15.0f;
+		float radius = 10.0f;
 		float offset = 2.5f;
 		for (unsigned int i = 0; i < amount; i++)
 		{
 			glm::mat4 model = glm::mat4(1.0f);
-			// 1. translation: displace along circle with 'radius' in range [-offset, offset]
-			float angle = (float)i / (float)amount * 360.0f;
-			float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-			float x = sin(angle) * radius + displacement;
-			displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-			float y = displacement * 0.4f; // keep height of asteroid field smaller compared to width of x and z
-			displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-			float z = cos(angle) * radius + displacement;
+			model = glm::translate(model, glm::vec3(5.0f, 0.0f, 0.0f));
 
-			model = glm::translate(model, glm::vec3(x, y, z));
-
-			// 2. scale: Scale between 0.05 and 0.25f
-			float scale = 1.0f; /*static_cast<float>((rand() % 20) / 100.0 + 0.05);*/
-
-			model = glm::scale(model, glm::vec3(scale));
-
-			// 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
-			float rotAngle = static_cast<float>((rand() % 360));
-
-			model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
-
-			//4. now add to list of matrices
 			modelMatrices[i].model = model;
 			modelMatrices[i].normal = glm::transpose(glm::inverse(model));
+
+			model = glm::mat4(1.0f);
+			model = glm::translate(model, glm::vec3(-5.0f, 0.0f, 0.0f));
+
+			modelMatrices1[i].model = model;
+			modelMatrices1[i].normal = glm::transpose(glm::inverse(model));
 		}
+
 
 #pragma endregion
 
 #pragma region gBuffer setting
 
-		// configure instanced array
-		// -------------------------
-		glGenBuffers(1, &buffer);
-		glBindBuffer(GL_ARRAY_BUFFER, buffer);
-		glBufferData(GL_ARRAY_BUFFER, amount * sizeof(ModelMatrices), &modelMatrices[0], GL_STATIC_DRAW);
-
-		for (unsigned int i = 0; i < backpack.meshes.size(); i++)
-		{
-			VAO = backpack.meshes[i].VAO;
-			glBindVertexArray(VAO);
-			// set attribute pointers for matrix (4 times vec4)
-			glEnableVertexAttribArray(3);
-			glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), nullptr);
-			glEnableVertexAttribArray(4);
-			glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(sizeof(glm::vec4)));
-			glEnableVertexAttribArray(5);
-			glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(2 * sizeof(glm::vec4)));
-			glEnableVertexAttribArray(6);
-			glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(3 * sizeof(glm::vec4)));
-
-			glVertexAttribDivisor(3, 1);
-			glVertexAttribDivisor(4, 1);
-			glVertexAttribDivisor(5, 1);
-			glVertexAttribDivisor(6, 1);
-
-			glEnableVertexAttribArray(7);
-			glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast < void*>(sizeof(glm::mat4)));
-			glEnableVertexAttribArray(8);
-			glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(sizeof(glm::mat4) + sizeof(glm::vec4)));
-			glEnableVertexAttribArray(9);
-			glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(sizeof(glm::mat4) + 2 * sizeof(glm::vec4)));
-			glEnableVertexAttribArray(10);
-			glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(sizeof(glm::mat4) + 3 * sizeof(glm::vec4)));
-
-			glVertexAttribDivisor(7, 1);
-			glVertexAttribDivisor(8, 1);
-			glVertexAttribDivisor(9, 1);
-			glVertexAttribDivisor(10, 1);
-
-			glBindVertexArray(0);
-		}
+		rock.SetUpVBO(modelMatrices1.data(), amount);
+		backpack.SetUpVBO(modelMatrices.data(), amount);
 
 		// configure g-buffer framebuffer
 		// ------------------------------
@@ -476,16 +427,8 @@ namespace gpr5300
 		pipelines[0].setMat4("projection", projection);
 		pipelines[0].setMat4("view", view);
 
-		for (unsigned int i = 0; i < backpack.meshes.size(); i++)
-		{
-			backpack.meshes[i].BindMaterial(pipelines[0]);
-			glBindVertexArray(backpack.meshes[i].VAO);
-			glDrawElementsInstanced(
-				GL_TRIANGLES,
-				static_cast<unsigned int>(backpack.meshes[i].indices.size()),
-				GL_UNSIGNED_INT, 0, amount);
-			glBindVertexArray(0);
-		}
+		rock.DrawStaticInstances(pipelines[0], amount);
+		backpack.DrawStaticInstances(pipelines[0], amount);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 

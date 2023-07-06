@@ -189,11 +189,16 @@ namespace gpr5300
 
 		// build and compile shaders
 		// -------------------------
-		shader = Pipeline("data/shaders/point_shadows/point_mapping.vert", "data/shaders/point_shadows/point_mapping.frag");
-		simpleDepthShader = Pipeline("data/shaders/point_shadows/shadow_mapping_depth.vert", "data/shaders/point_shadows/shadow_mapping_depth.frag", "data/shaders/point_shadows/shadow_mapping_depth.geom");
+		shader = Pipeline(
+			"data/shaders/point_shadows/point_mapping.vert",
+			"data/shaders/point_shadows/point_mapping.frag");
+		simpleDepthShader = Pipeline(
+			"data/shaders/point_shadows/shadow_mapping_depth.vert",
+			"data/shaders/point_shadows/shadow_mapping_depth.frag",
+			"data/shaders/point_shadows/shadow_mapping_depth.geom");
 
 		// load textures
-			// -------------
+		// -------------
 		woodTexture = LoadTexture("data/textures/container2.png");
 
 		// configure depth map FBO
@@ -232,7 +237,7 @@ namespace gpr5300
 	void point_shadows_test::Update(float dt)
 	{
 
-		shadows = !action;
+		shadows = !action1;
 
 		time_ += dt;
 		// move light position over time

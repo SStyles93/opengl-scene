@@ -193,7 +193,7 @@ namespace gpr5300
 
 	void hdr_test::Update(float dt)
 	{
-		hdr = action;
+		hdr = action1;
 
 		time_ += dt;
 		// render

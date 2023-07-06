@@ -28,7 +28,8 @@ namespace gpr5300
 		Camera* camera = nullptr;
 
 		//action given by the engine
-		bool action = false;
+		bool action1 = false;
+		bool action2 = false;
 
 		///<summary>
 		///Initializes a texture and returns it's ID

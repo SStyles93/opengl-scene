@@ -24,6 +24,7 @@ namespace gpr5300
 
 	constexpr int CAM_SPEED_INCREASE_KEY = SDL_SCANCODE_2;
 	constexpr int CAM_SPEED_DECREASE_KEY = SDL_SCANCODE_1;
-	constexpr int ACTION_KEY = SDL_SCANCODE_SPACE;
+	constexpr int ACTION_KEY1 = SDL_SCANCODE_O;
+	constexpr int ACTION_KEY2 = SDL_SCANCODE_P;
 
 }
