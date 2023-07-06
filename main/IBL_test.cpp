@@ -101,7 +101,7 @@ namespace gpr5300
         {
             glGenVertexArrays(1, &sphereVAO);
 
-         
+            unsigned int vbo, ebo;
             glGenBuffers(1, &vbo);
             glGenBuffers(1, &ebo);
 
@@ -186,6 +186,7 @@ namespace gpr5300
 
         glBindVertexArray(sphereVAO);
         glDrawElements(GL_TRIANGLE_STRIP, indexCount, GL_UNSIGNED_INT, 0);
+
     }
     void IBL_test::renderCube()
     {
@@ -358,19 +359,22 @@ namespace gpr5300
         // pbr: setup framebuffer
         // ----------------------
         
+        // pbr: setup framebuffer
+        // ----------------------
+
         glGenFramebuffers(1, &captureFBO);
         glGenRenderbuffers(1, &captureRBO);
 
         glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
         glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, SCREEN_WIDTH, SCREEN_HEIGHT);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, captureRBO);
 
         // pbr: load the HDR environment map
         // ---------------------------------
         stbi_set_flip_vertically_on_load(true);
         int width, height, nrComponents;
-        float* data = stbi_loadf("data/textures/hdr/environment.hdr", &width, &height, &nrComponents, 0);
+        float* data = stbi_loadf("data/textures/environment.hdr", &width, &height, &nrComponents, 0);
         if (data)
         {
             glGenTextures(1, &hdrTexture);
@@ -390,12 +394,12 @@ namespace gpr5300
         }
 
         // pbr: setup cubemap to render to and attach to framebuffer
-        // --------------------------------------------------------
+        // ---------------------------------------------------------
         glGenTextures(1, &envCubemap);
         glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
         for (unsigned int i = 0; i < 6; ++i)
         {
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, nullptr);
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RGB, GL_FLOAT, nullptr);
         }
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -424,7 +428,7 @@ namespace gpr5300
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, hdrTexture);
 
-        glViewport(0, 0, 512, 512); // don't forget to configure the viewport to the capture dimensions.
+        glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT); // don't forget to configure the viewport to the capture dimensions.
         glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
         for (unsigned int i = 0; i < 6; ++i)
         {
@@ -442,7 +446,6 @@ namespace gpr5300
 
         // pbr: create an irradiance cubemap, and re-scale capture FBO to irradiance scale.
         // --------------------------------------------------------------------------------
-        
         glGenTextures(1, &irradianceMap);
         glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
         for (unsigned int i = 0; i < 6; ++i)
@@ -480,7 +483,7 @@ namespace gpr5300
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // pbr: create a pre-filter cubemap, and re-scale capture FBO to pre-filter scale.
-        // -------------------------------------------------------------------------------
+        // --------------------------------------------------------------------------------
         glGenTextures(1, &prefilterMap);
         glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap);
         for (unsigned int i = 0; i < 6; ++i)
@@ -528,12 +531,12 @@ namespace gpr5300
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // pbr: generate a 2D LUT from the BRDF equations used.
-        // ---------------------------------------------------
+        // ----------------------------------------------------
         glGenTextures(1, &brdfLUTTexture);
 
         // pre-allocate enough memory for the LUT texture.
         glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_FLOAT, 0);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RG, GL_FLOAT, 0);
         // be sure to set wrapping mode to GL_CLAMP_TO_EDGE
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -543,10 +546,10 @@ namespace gpr5300
         // then re-configure capture framebuffer object and render screen-space quad with BRDF shader.
         glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
         glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, SCREEN_WIDTH, SCREEN_HEIGHT);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdfLUTTexture, 0);
 
-        glViewport(0, 0, 512, 512);
+        glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
         brdfShader.use();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         renderQuad();
@@ -699,17 +702,18 @@ namespace gpr5300
 
         // render skybox (render as last to prevent overdraw)
         backgroundShader.use();
-        backgroundShader.setMat4("view", view);
 
+        backgroundShader.setMat4("view", view);
         glActiveTexture(GL_TEXTURE0);
-        //glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
         //glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap); // display irradiance map
-        glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap); // display prefilter map
+        //glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap); // display prefilter map
         renderCube();
 
-         //render BRDF map to screen
-        //brdfShader.use();
+        // render BRDF map to screen
+        //brdfShader.Use();
         //renderQuad();
+
     }
 
     void IBL_test::End()

@@ -36,11 +36,9 @@ namespace gpr5300
 		std::vector<ModelMatrices> modelMatrices;
 		std::vector<ModelMatrices> modelMatrices1;
 
-		unsigned int amount = 1;
+		unsigned int amount = 100;
 
 		float time_{};
-		unsigned int VAO{};
-		unsigned int buffer{};
 		Model backpack;
 		Model rock;
 
@@ -264,30 +262,38 @@ namespace gpr5300
 		modelMatrices1.resize(amount);
 
 		srand(static_cast<unsigned int>(time_)); // initialize random seed
-		float radius = 10.0f;
-		float offset = 2.5f;
+		float xOffset = 0;
+		float zOffset = 0;
 		for (unsigned int i = 0; i < amount; i++)
 		{
+			if (i % 10 == 0)
+			{
+				xOffset = 0;
+				zOffset += 5;
+			}
 			glm::mat4 model = glm::mat4(1.0f);
-			model = glm::translate(model, glm::vec3(5.0f, 0.0f, 0.0f));
+			model = glm::translate(model, glm::vec3(5.0f + (5.0f * xOffset), 0.0f, -zOffset));
 
 			modelMatrices[i].model = model;
 			modelMatrices[i].normal = glm::transpose(glm::inverse(model));
 
 			model = glm::mat4(1.0f);
-			model = glm::translate(model, glm::vec3(-5.0f, 0.0f, 0.0f));
+			model = glm::translate(model, glm::vec3(-5.0f + (-5.0f * xOffset), 0.0f, -zOffset));
 
 			modelMatrices1[i].model = model;
 			modelMatrices1[i].normal = glm::transpose(glm::inverse(model));
+
+			xOffset++;
 		}
 
 
 #pragma endregion
 
-#pragma region gBuffer setting
 
 		rock.SetUpVBO(modelMatrices1.data(), amount);
 		backpack.SetUpVBO(modelMatrices.data(), amount);
+
+#pragma region gBuffer setting
 
 		// configure g-buffer framebuffer
 		// ------------------------------
@@ -528,8 +534,6 @@ namespace gpr5300
 		glDeleteVertexArrays(1, &quadVAO);
 		glDeleteBuffers(1, &quadVBO);
 		glDeleteBuffers(1, &gBuffer);
-		glDeleteVertexArrays(1, &VAO);
-		glDeleteBuffers(1, &buffer);
 	}
 }
 
