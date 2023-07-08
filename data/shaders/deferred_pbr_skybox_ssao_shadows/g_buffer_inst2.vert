@@ -11,9 +11,11 @@ layout (location = 7) in mat4 aNormalMatrix;
 out vec2 TexCoords;
 out vec3 WorldPos;
 out vec3 Normal;
+out vec4 FragPosLightSpace;
 
 uniform mat4 view;
 uniform mat4 projection;
+uniform mat4 lightSpaceMatrix;
 
 void main()
 {
@@ -23,6 +25,8 @@ void main()
     WorldPos = worldPos.xyz; 
     
     Normal = mat3(aNormalMatrix) * aNormal;
+
+    FragPosLightSpace = lightSpaceMatrix * vec4(WorldPos, 1.0);
 
     gl_Position = projection * view *  worldPos;
 }

@@ -159,7 +159,7 @@ namespace gpr5300
 			glVertexAttribDivisor(6, 1);
 
 			glEnableVertexAttribArray(7);
-			glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast <void*>(sizeof(glm::mat4)));
+			glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(sizeof(glm::mat4)));
 			glEnableVertexAttribArray(8);
 			glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(sizeof(glm::mat4) + sizeof(glm::vec4)));
 			glEnableVertexAttribArray(9);

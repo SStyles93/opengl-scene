@@ -19,6 +19,9 @@ namespace gpr5300
 		void renderImage();
 		float ourLerp(float a, float b, float f);
 
+
+		void DrawScene(Pipeline& pipeline, std::vector<Model> models);
+
 		std::vector<Pipeline> pipelines{};
 
 		unsigned int gBuffer;
@@ -31,7 +34,7 @@ namespace gpr5300
 		unsigned int cubeVAO = 0;
 		unsigned int cubeVBO = 0;
 
-		const unsigned int NR_LIGHTS = 32;
+		const unsigned int NR_LIGHTS = 1;
 		std::vector<glm::vec3> lightPositions;
 		std::vector<glm::vec3> lightColors;
 
@@ -92,6 +95,7 @@ namespace gpr5300
 			-1.0f, -1.0f,  1.0f,
 			 1.0f, -1.0f,  1.0f
 		};
+		unsigned int loadCubemap(std::vector<std::string> faces);
 
 		Pipeline shaderSSAO;
 		Pipeline shaderSSAOBlur;
@@ -103,7 +107,21 @@ namespace gpr5300
 		std::vector<glm::vec3> ssaoKernel;
 		std::vector<glm::vec3> ssaoNoise;
 
-		unsigned int loadCubemap(std::vector<std::string> faces);
+		float planeVertices[48] = {
+			// positions            // normals				// texcoords
+			 1.0f, 0.0f, -1.0f,		0.0f, 1.0f, 0.0f,	1.0f, 1.0f,
+			-1.0f, 0.0f, -1.0f,		0.0f, 1.0f, 0.0f,	0.0f, 1.0f,
+			 1.0f, 0.0f, 1.0f,		0.0f, 1.0f, 0.0f,	1.0f, 0.0f,
+			
+			-1.0f, 0.0f, -1.0f,		0.0f, 1.0f, 0.0f,	0.0f, 1.0f,
+			-1.0f, 0.0f, 1.0f,		0.0f, 1.0f, 0.0f,	0.0f, 0.0f,
+			 1.0f, 0.0f, 1.0f,		0.0f, 1.0f, 0.0f,	1.0f, 0.0f
+		};
+		unsigned int planeVAO = 0, planeVBO = 0;
+
+		unsigned int woodTexture;
+
+		ModelMatrices planeMatrice;
 	};
 
 	unsigned int deferred_pbr_skybox_ssao_shadows::loadCubemap(std::vector<std::string> faces)
@@ -251,9 +269,12 @@ namespace gpr5300
 		backpack = Model("data/objects/backpack.obj");
 		rock = Model("data/objects/rock.obj");
 
+		woodTexture = LoadTexture("data/textures/container2.png");
+
 #pragma region Shader Loading
 
 		// build and compile shaders
+
 		//Geometry pass 0
 		pipelines.emplace_back(
 			"data/shaders/deferred_pbr_skybox_ssao_shadows/g_buffer_inst2.vert",
@@ -271,9 +292,13 @@ namespace gpr5300
 			"data/shaders/cubemap/skybox.vert",
 			"data/shaders/cubemap/skybox.frag");
 		//SSAO 4
-		pipelines.emplace_back("data/shaders/ssao/ssao.vert", "data/shaders/ssao/ssao.frag");
+		pipelines.emplace_back(
+			"data/shaders/ssao/ssao.vert",
+			"data/shaders/ssao/ssao.frag");
 		//SSAO 5
-		pipelines.emplace_back("data/shaders/ssao/ssao.vert", "data/shaders/ssao/ssao_blur.frag");
+		pipelines.emplace_back(
+			"data/shaders/ssao/ssao.vert", 
+			"data/shaders/ssao/ssao_blur.frag");
 
 #pragma endregion
 
@@ -300,11 +325,68 @@ namespace gpr5300
 		}
 
 
+		glm::mat4 model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(0.0f, -2.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(25.0f, 1.0f, 25.0f));
+		planeMatrice.model = model;
+		planeMatrice.normal = glm::transpose(glm::inverse(model));
+
 #pragma endregion
 
+#pragma region Objects setting
 
 		rock.SetUpVBO(modelMatrices1.data(), amount);
 		backpack.SetUpVBO(modelMatrices.data(), amount);
+
+		glGenVertexArrays(1, &planeVAO);
+		glGenBuffers(1, &planeVBO);
+
+		glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
+		glBindVertexArray(planeVAO);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), nullptr);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), reinterpret_cast<void*>(3 * sizeof(float)));
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+
+		glGenBuffers(1, &planeVBO);
+		glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(ModelMatrices), &planeMatrice, GL_STATIC_DRAW);
+		//set attribute pointers for matrix (4 times vec4)
+		glEnableVertexAttribArray(3);
+		glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), nullptr);
+		glEnableVertexAttribArray(4);
+		glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(sizeof(glm::vec4)));
+		glEnableVertexAttribArray(5);
+		glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(2 * sizeof(glm::vec4)));
+		glEnableVertexAttribArray(6);
+		glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(3 * sizeof(glm::vec4)));
+
+		glVertexAttribDivisor(3, 1);
+		glVertexAttribDivisor(4, 1);
+		glVertexAttribDivisor(5, 1);
+		glVertexAttribDivisor(6, 1);
+
+		glEnableVertexAttribArray(7);
+		glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast <void*>(sizeof(glm::mat4)));
+		glEnableVertexAttribArray(8);
+		glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(sizeof(glm::mat4) + sizeof(glm::vec4)));
+		glEnableVertexAttribArray(9);
+		glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(sizeof(glm::mat4) + 2 * sizeof(glm::vec4)));
+		glEnableVertexAttribArray(10);
+		glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(sizeof(glm::mat4) + 3 * sizeof(glm::vec4)));
+
+		glVertexAttribDivisor(7, 1);
+		glVertexAttribDivisor(8, 1);
+		glVertexAttribDivisor(9, 1);
+		glVertexAttribDivisor(10, 1);
+
+		glBindVertexArray(0);
+
+#pragma endregion
+
 
 #pragma region gBuffer setting
 
@@ -344,7 +426,7 @@ namespace gpr5300
 		// tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
 		unsigned int attachments[4] = {
 			GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2,
-			GL_COLOR_ATTACHMENT3/*, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5*/ };
+			GL_COLOR_ATTACHMENT3, /*GL_COLOR_ATTACHMENT4, /*GL_COLOR_ATTACHMENT5*/};
 
 		glDrawBuffers(4, attachments);
 		// create and attach depth buffer (renderbuffer)
@@ -369,7 +451,7 @@ namespace gpr5300
 		pipelines[1].setInt("gNormal", 1);
 		pipelines[1].setInt("gAlbedo", 2);
 		pipelines[1].setInt("gARM", 3);
-		pipelines[1].setInt("ssao", 4);
+		pipelines[1].setInt("gSsao", 4);
 
 #pragma endregion
 
@@ -497,8 +579,9 @@ namespace gpr5300
 	{
 		time_ += dt;
 
-		// render
-		// ------
+
+		//// render
+		//// ------
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -510,16 +593,15 @@ namespace gpr5300
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glm::mat4 projection = glm::perspective(glm::radians(camera->Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
 		glm::mat4 view = camera->GetViewMatrix();
-		glm::mat4 model = glm::mat4(1.0f);
 
 		pipelines[0].use();
 		pipelines[0].setMat4("projection", projection);
 		pipelines[0].setMat4("view", view);
-
-		rock.DrawStaticInstances(pipelines[0], amount);
-		backpack.DrawStaticInstances(pipelines[0], amount);
-
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		
+		std::vector<Model> models;
+		models.push_back(backpack);
+		models.push_back(rock);
+		DrawScene(pipelines[0], models);
 
 #pragma endregion
 
@@ -610,6 +692,7 @@ namespace gpr5300
 
 		// 3. render lights on top of scene
 		// --------------------------------
+		glm::mat4 model = glm::mat4(1.0f);
 		pipelines[2].use();
 		pipelines[2].setMat4("projection", projection);
 		pipelines[2].setMat4("view", view);
@@ -657,6 +740,40 @@ namespace gpr5300
 		glDeleteBuffers(1, &ssaoBlurFBO);
 		glDeleteBuffers(1, &ssaoColorBuffer);
 		glDeleteBuffers(1, &ssaoColorBufferBlur);
+
+		glDeleteVertexArrays(1, &planeVAO);
+		glDeleteBuffers(1, &planeVAO);
+	}
+
+	void deferred_pbr_skybox_ssao_shadows::DrawScene(Pipeline& pipeline, std::vector<Model> models)
+	{
+		//Draw objects
+		rock.DrawStaticInstances(pipeline, amount);
+		backpack.DrawStaticInstances(pipeline, amount);
+
+		for (auto& model : models)
+		{
+			model.DrawStaticInstances(pipeline, amount);
+		}
+
+		glActiveTexture(GL_TEXTURE0);
+		glUniform1i(glGetUniformLocation(pipeline.ID, "gPosition"), 0);
+		glBindTexture(GL_TEXTURE_2D, woodTexture);
+
+		glActiveTexture(GL_TEXTURE1);
+		glUniform1i(glGetUniformLocation(pipeline.ID, "gNormal"), 2);
+		glBindTexture(GL_TEXTURE_2D, woodTexture);
+
+		glActiveTexture(GL_TEXTURE2);
+		glUniform1i(glGetUniformLocation(pipeline.ID, "gAlbedo"), 3);
+		glBindTexture(GL_TEXTURE_2D, woodTexture);
+
+		glBindVertexArray(planeVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		//Have to unbind the vertex array at the end of Geometry pass
+		glBindVertexArray(0);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
 }

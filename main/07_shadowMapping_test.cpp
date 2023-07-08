@@ -27,7 +27,7 @@ namespace gpr5300
 		unsigned int woodTexture;
 
 		unsigned int planeVAO = 0, planeVBO = 0, quadVAO = 0, cubeVAO = 0, quadVBO = 0, cubeVBO = 0;
-		const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+		const unsigned int SHADOW_WIDTH = 2048, SHADOW_HEIGHT = 2048;
 		unsigned int depthMapFBO;
 		unsigned int depthMap;
 
@@ -234,6 +234,7 @@ namespace gpr5300
 		shader.use();
 		shader.setInt("diffuseTexture", 0);
 		shader.setInt("shadowMap", 1);
+
 		debugDepthQuad.use();
 		debugDepthQuad.setInt("depthMap", 0);
 
@@ -252,7 +253,6 @@ namespace gpr5300
 
 		// 1. render depth of scene to texture (from light's perspective)
 		// --------------------------------------------------------------
-		
 		//lightProjection = glm::perspective(glm::radians(45.0f), (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT, near_plane, far_plane); // note that if you use a perspective projection matrix you'll have to change the light position as the current light position isn't enough to reflect the whole scene
 		lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
 		lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
@@ -297,7 +297,7 @@ namespace gpr5300
 		//debugDepthQuad.setFloat("far_plane", far_plane);
 		//glActiveTexture(GL_TEXTURE0);
 		//glBindTexture(GL_TEXTURE_2D, depthMap);
-		////renderQuad();
+		//renderQuad();
 
 	}
 

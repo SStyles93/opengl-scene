@@ -7,7 +7,7 @@
 
 namespace gpr5300
 {
-	class IBL_test final : public Scene
+	class IBL_simple_test final : public Scene
 	{
 	public:
 		void Begin() override;
@@ -93,13 +93,19 @@ namespace gpr5300
 
 		unsigned int vbo, ebo;
 
+		int nrRows = 7;
+		int nrColumns = 7;
+		float spacing = 2.5;
+
 	};
 
-	void IBL_test::renderSphere()
+	void IBL_simple_test::renderSphere()
 	{
 		if (sphereVAO == 0)
 		{
 			glGenVertexArrays(1, &sphereVAO);
+
+			unsigned int vbo, ebo;
 			glGenBuffers(1, &vbo);
 			glGenBuffers(1, &ebo);
 
@@ -148,7 +154,7 @@ namespace gpr5300
 				}
 				oddRow = !oddRow;
 			}
-			indexCount = static_cast<GLsizei>(indices.size());
+			indexCount = static_cast<unsigned int>(indices.size());
 
 			std::vector<float> data;
 			for (unsigned int i = 0; i < positions.size(); ++i)
@@ -184,9 +190,8 @@ namespace gpr5300
 
 		glBindVertexArray(sphereVAO);
 		glDrawElements(GL_TRIANGLE_STRIP, indexCount, GL_UNSIGNED_INT, 0);
-
 	}
-	void IBL_test::renderCube()
+	void IBL_simple_test::renderCube()
 	{
 		// initialize (if necessary)
 		if (cubeVAO == 0)
@@ -256,7 +261,7 @@ namespace gpr5300
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 	}
-	void IBL_test::renderQuad()
+	void IBL_simple_test::renderQuad()
 	{
 		if (quadVAO == 0)
 		{
@@ -283,7 +288,7 @@ namespace gpr5300
 		glBindVertexArray(0);
 	}
 
-	void IBL_test::Begin()
+	void IBL_simple_test::Begin()
 	{
 		// configure global opengl state
 	  // -----------------------------
@@ -295,63 +300,22 @@ namespace gpr5300
 
 		// build and compile shaders
 		// -------------------------
-		pbrShader = Pipeline("data/shaders/IBL/pbr.vert", "data/shaders/IBL/pbr.frag");
-		equirectangularToCubemapShader = Pipeline("data/shaders/IBL/cubemap.vert", "data/shaders/IBL/equirectangular_to_cubemap.frag");
-		irradianceShader = Pipeline("data/shaders/IBL/cubemap.vert", "data/shaders/IBL/irradiance_convolution.frag");
-		prefilterShader = Pipeline("data/shaders/IBL/cubemap.vert", "data/shaders/IBL/prefilter.frag");
-		brdfShader = Pipeline("data/shaders/IBL/brdf.vert", "data/shaders/IBL/brdf.frag");
-		backgroundShader = Pipeline("data/shaders/IBL/background.vert", "data/shaders/IBL/background.frag");
+		pbrShader = Pipeline("data/shaders/IBL_simple/pbr.vert", "data/shaders/IBL_simple/pbr.frag");
+		equirectangularToCubemapShader = Pipeline("data/shaders/IBL_simple/cubemap.vert", "data/shaders/IBL_simple/equirectangular_to_cubemap.frag");
+		irradianceShader = Pipeline("data/shaders/IBL_simple/cubemap.vert", "data/shaders/IBL_simple/irradiance_convolution.frag");
+		prefilterShader = Pipeline("data/shaders/IBL_simple/cubemap.vert", "data/shaders/IBL_simple/prefilter.frag");
+		brdfShader = Pipeline("data/shaders/IBL_simple/brdf.vert", "data/shaders/IBL_simple/brdf.frag");
+		backgroundShader = Pipeline("data/shaders/IBL_simple/background.vert", "data/shaders/IBL_simple/background.frag");
 
 		pbrShader.use();
 		pbrShader.setInt("irradianceMap", 0);
 		pbrShader.setInt("prefilterMap", 1);
 		pbrShader.setInt("brdfLUT", 2);
-		pbrShader.setInt("albedoMap", 3);
-		pbrShader.setInt("normalMap", 4);
-		pbrShader.setInt("metallicMap", 5);
-		pbrShader.setInt("roughnessMap", 6);
-		pbrShader.setInt("aoMap", 7);
+		pbrShader.setVec3("albedo", 0.5f, 0.0f, 0.0f);
+		pbrShader.setFloat("ao", 1.0f);
 
 		backgroundShader.use();
 		backgroundShader.setInt("environmentMap", 0);
-
-		// load PBR material textures
-		// --------------------------
-		// rusted iron
-		ironAlbedoMap = LoadTexture("data/textures/pbr/steel/albedo.png");
-		ironNormalMap = LoadTexture("data/textures/pbr/steel/normal.png");
-		ironMetallicMap = LoadTexture("data/textures/pbr/steel/metallic.png");
-		ironRoughnessMap = LoadTexture("data/textures/pbr/steel/roughness.png");
-		ironAOMap = LoadTexture("data/textures/pbr/steel/ao.png");
-
-		// gold
-		goldAlbedoMap = LoadTexture("data/textures/pbr/gold/albedo.png");
-		goldNormalMap = LoadTexture("data/textures/pbr/gold/normal.png");
-		goldMetallicMap = LoadTexture("data/textures/pbr/gold/metallic.png");
-		goldRoughnessMap = LoadTexture("data/textures/pbr/gold/roughness.png");
-		goldAOMap = LoadTexture("data/textures/pbr/gold/ao.png");
-
-		// grass
-		grassAlbedoMap = LoadTexture("data/textures/pbr/grass/albedo.png");
-		grassNormalMap = LoadTexture("data/textures/pbr/grass/normal.png");
-		grassMetallicMap = LoadTexture("data/textures/pbr/grass/metallic.png");
-		grassRoughnessMap = LoadTexture("data/textures/pbr/grass/roughness.png");
-		grassAOMap = LoadTexture("data/textures/pbr/grass/ao.png");
-
-		// plastic
-		plasticAlbedoMap = LoadTexture("data/textures/pbr/plastic/grey_albedo.png");
-		plasticNormalMap = LoadTexture("data/textures/pbr/plastic/normal.png");
-		plasticMetallicMap = LoadTexture("data/textures/pbr/plastic/metallic.png");
-		plasticRoughnessMap = LoadTexture("data/textures/pbr/plastic/roughness.png");
-		plasticAOMap = LoadTexture("data/textures/pbr/plastic/ao.png");
-
-		// wall
-		wallAlbedoMap = LoadTexture("data/textures/pbr/wall/albedo.png");
-		wallNormalMap = LoadTexture("data/textures/pbr/wall/normal.png");
-		wallMetallicMap = LoadTexture("data/textures/pbr/wall/metallic.png");
-		wallRoughnessMap = LoadTexture("data/textures/pbr/wall/roughness.png");
-		wallAOMap = LoadTexture("data/textures/pbr/wall/ao.png");
-
 
 		// pbr: setup framebuffer
 		// ----------------------
@@ -563,7 +527,7 @@ namespace gpr5300
 
 	}
 
-	void IBL_test::Update(float dt)
+	void IBL_simple_test::Update(float dt)
 	{
 		time_ += dt;
 
@@ -588,95 +552,28 @@ namespace gpr5300
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
 
-		// rusted iron
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, ironAlbedoMap);
-		glActiveTexture(GL_TEXTURE4);
-		glBindTexture(GL_TEXTURE_2D, ironNormalMap);
-		glActiveTexture(GL_TEXTURE5);
-		glBindTexture(GL_TEXTURE_2D, ironMetallicMap);
-		glActiveTexture(GL_TEXTURE6);
-		glBindTexture(GL_TEXTURE_2D, ironRoughnessMap);
-		glActiveTexture(GL_TEXTURE7);
-		glBindTexture(GL_TEXTURE_2D, ironAOMap);
-
+		// render rows*column number of spheres with varying metallic/roughness values scaled by rows and columns respectively
 		model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(-5.0, 0.0, 2.0));
-		pbrShader.setMat4("model", model);
-		pbrShader.setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
-		renderSphere();
+		for (int row = 0; row < nrRows; ++row)
+		{
+			pbrShader.setFloat("metallic", (float)row / (float)nrRows);
+			for (int col = 0; col < nrColumns; ++col)
+			{
+				// we clamp the roughness to 0.025 - 1.0 as perfectly smooth surfaces (roughness of 0.0) tend to look a bit off
+				// on direct lighting.
+				pbrShader.setFloat("roughness", glm::clamp((float)col / (float)nrColumns, 0.05f, 1.0f));
 
-		// gold
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, goldAlbedoMap);
-		glActiveTexture(GL_TEXTURE4);
-		glBindTexture(GL_TEXTURE_2D, goldNormalMap);
-		glActiveTexture(GL_TEXTURE5);
-		glBindTexture(GL_TEXTURE_2D, goldMetallicMap);
-		glActiveTexture(GL_TEXTURE6);
-		glBindTexture(GL_TEXTURE_2D, goldRoughnessMap);
-		glActiveTexture(GL_TEXTURE7);
-		glBindTexture(GL_TEXTURE_2D, goldAOMap);
-
-		model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(-3.0, 0.0, 2.0));
-		pbrShader.setMat4("model", model);
-		pbrShader.setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
-		renderSphere();
-
-		// grass
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, grassAlbedoMap);
-		glActiveTexture(GL_TEXTURE4);
-		glBindTexture(GL_TEXTURE_2D, grassNormalMap);
-		glActiveTexture(GL_TEXTURE5);
-		glBindTexture(GL_TEXTURE_2D, grassMetallicMap);
-		glActiveTexture(GL_TEXTURE6);
-		glBindTexture(GL_TEXTURE_2D, grassRoughnessMap);
-		glActiveTexture(GL_TEXTURE7);
-		glBindTexture(GL_TEXTURE_2D, grassAOMap);
-
-		model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(-1.0, 0.0, 2.0));
-		pbrShader.setMat4("model", model);
-		pbrShader.setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
-		renderSphere();
-
-		// plastic
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, plasticAlbedoMap);
-		glActiveTexture(GL_TEXTURE4);
-		glBindTexture(GL_TEXTURE_2D, plasticNormalMap);
-		glActiveTexture(GL_TEXTURE5);
-		glBindTexture(GL_TEXTURE_2D, plasticMetallicMap);
-		glActiveTexture(GL_TEXTURE6);
-		glBindTexture(GL_TEXTURE_2D, plasticRoughnessMap);
-		glActiveTexture(GL_TEXTURE7);
-		glBindTexture(GL_TEXTURE_2D, plasticAOMap);
-
-		model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(1.0, 0.0, 2.0));
-		pbrShader.setMat4("model", model);
-		pbrShader.setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
-		renderSphere();
-
-		// wall
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, wallAlbedoMap);
-		glActiveTexture(GL_TEXTURE4);
-		glBindTexture(GL_TEXTURE_2D, wallNormalMap);
-		glActiveTexture(GL_TEXTURE5);
-		glBindTexture(GL_TEXTURE_2D, wallMetallicMap);
-		glActiveTexture(GL_TEXTURE6);
-		glBindTexture(GL_TEXTURE_2D, wallRoughnessMap);
-		glActiveTexture(GL_TEXTURE7);
-		glBindTexture(GL_TEXTURE_2D, wallAOMap);
-
-		model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(3.0, 0.0, 2.0));
-		pbrShader.setMat4("model", model);
-		pbrShader.setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
-		renderSphere();
+				model = glm::mat4(1.0f);
+				model = glm::translate(model, glm::vec3(
+					(float)(col - (nrColumns / 2)) * spacing,
+					(float)(row - (nrRows / 2)) * spacing,
+					-2.0f
+				));
+				pbrShader.setMat4("model", model);
+				pbrShader.setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
+				renderSphere();
+			}
+		}
 
 		// render light source (simply re-render sphere at light positions)
 		// this looks a bit off as we use the same shader, but it'll make their positions obvious and 
@@ -712,7 +609,7 @@ namespace gpr5300
 
 	}
 
-	void IBL_test::End()
+	void IBL_simple_test::End()
 	{
 		glDeleteBuffers(1, &sphereVAO);
 	}
@@ -721,7 +618,7 @@ namespace gpr5300
 int main(int argc, char** argv)
 {
 	gpr5300::Camera camera;
-	gpr5300::IBL_test scene;
+	gpr5300::IBL_simple_test scene;
 	scene.camera = &camera;
 	gpr5300::Engine engine(&scene);
 	engine.Run();
