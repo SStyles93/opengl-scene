@@ -355,7 +355,6 @@ namespace gpr5300
 
 		// pbr: setup framebuffer
 		// ----------------------
-
 		glGenFramebuffers(1, &captureFBO);
 		glGenRenderbuffers(1, &captureRBO);
 

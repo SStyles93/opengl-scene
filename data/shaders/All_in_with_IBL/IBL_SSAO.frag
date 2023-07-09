@@ -11,6 +11,11 @@ uniform sampler2D gAlbedo;
 uniform sampler2D gARM;
 uniform sampler2D gSsao;
 
+//IBL
+uniform samplerCube irradianceMap;
+uniform samplerCube prefilterMap;
+uniform sampler2D brdfLUT;
+
 struct Light {
     vec3 Position;
     vec3 Color;
@@ -65,11 +70,17 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 // ----------------------------------------------------------------------------
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
+{
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}   
+// ----------------------------------------------------------------------------
 void main()
 {		
     vec3 N = normalize(texture(gNormal, TexCoords).rgb);
     vec3 WorldPos = texture(gPosition,TexCoords).rgb;
     vec3 V = normalize(viewPos - WorldPos);
+    vec3 R = reflect(-V, N);
 
     // calculate reflectance at normal incidence; if dia-electric (like plastic) use F0 
     // of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)    
@@ -113,10 +124,24 @@ void main()
         // add to outgoing radiance Lo
         Lo += (kD * texture(gAlbedo, TexCoords).rgb / PI + specular) * radiance * NdotL;  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
     }   
+    //IBL ambient lighting
+    vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, texture(gARM, TexCoords).g);
+
+    vec3 kS = F;
+    vec3 kD = 1.0 - kS;
+    kD *= 1.0 - texture(gARM, TexCoords).b;
+
+    vec3 irradiance = texture(irradianceMap, N).rgb;
+    vec3 diffuse = irradiance * texture(gAlbedo, TexCoords).rgb;
+
+     const float MAX_REFLECTION_LOD = 4.0;
+
+     vec3 prefilteredColor = textureLod(prefilterMap, R, texture(gARM, TexCoords).g * MAX_REFLECTION_LOD).rgb;
+     vec2 brdf  = texture(brdfLUT, vec2(max(dot(N, V), 0.0), texture(gARM, TexCoords).g)).rg;
+     vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
     
-    // ambient lighting (note that the next IBL tutorial will replace 
-    // this ambient lighting with environment lighting).
-    vec3 ambient = vec3(0.03) * texture(gAlbedo, TexCoords).rgb * texture(gARM, TexCoords).r * texture(gSsao, TexCoords).r;;
+    //IBL ambient
+    vec3 ambient = (kD * diffuse + specular) * texture(gARM, TexCoords).r;
 
     vec3 color = ambient + Lo;
 
