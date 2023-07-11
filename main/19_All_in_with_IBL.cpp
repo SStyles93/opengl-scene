@@ -18,38 +18,38 @@ namespace gpr5300
 		void renderImage();
 		void renderEnvironmentCube();
 		float ourLerp(float a, float b, float f);
-
+		
 		void renderCube();
+
 		void SetUpPlane();
 
-
-		void DrawScene(Pipeline& pipeline, std::vector<Model> models);
+		void DrawScene(Pipeline& pipeline, std::vector<Model> models = {});
 
 		std::vector<Pipeline> pipelines{};
 
 		unsigned int gBuffer;
-		unsigned int gPosition, gNormal, gAlbedo, gARM, gSSAO;
+		unsigned int gPosition, gNormal, gBaseColor, gNormalMap ,gARM, gSSAO;
 		unsigned int rboDepth;
-
+		
 		unsigned int quadVAO = 0;
 		unsigned int quadVBO;
 
 		unsigned int cubeVAO = 0;
 		unsigned int cubeVBO = 0;
 
-		const unsigned int NR_LIGHTS = 32;
+		const unsigned int NR_LIGHTS = 1;
 		std::vector<glm::vec3> lightPositions;
 		std::vector<glm::vec3> lightColors;
 
 
+		Model backpack;
 		std::vector<ModelMatrices> modelMatrices;
+		Model rock;
 		std::vector<ModelMatrices> modelMatrices1;
 
 		unsigned int amount = 1;
 
 		float time_{};
-		Model backpack;
-		Model rock;
 
 		Pipeline shaderSSAO;
 		Pipeline shaderSSAOBlur;
@@ -73,7 +73,12 @@ namespace gpr5300
 		};
 		unsigned int planeVAO = 0, planeVBO = 0;
 
-		unsigned int woodTexture;
+		// wall
+		unsigned int wallAlbedoMap;
+		unsigned int wallNormalMap;
+		unsigned int wallMetallicMap;
+		unsigned int wallRoughnessMap;
+		unsigned int wallAOMap;
 
 		ModelMatrices planeMatrice;
 
@@ -346,6 +351,9 @@ namespace gpr5300
 
 	void All_in_with_IBL::Begin()
 	{
+
+#pragma region OpenGL Settings
+
 		// tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
 		stbi_set_flip_vertically_on_load(true);
 
@@ -362,10 +370,18 @@ namespace gpr5300
 		// enable seamless cubemap sampling for lower mip levels in the pre-filter map.
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
-		backpack = Model("data/objects/backpack.obj");
-		rock = Model("data/objects/rock.obj");
+#pragma endregion
 
-		woodTexture = LoadTexture("data/textures/container2.png");
+		backpack = Model("data/objects/backpack/backpack.obj");
+		rock = Model("data/objects/rock/rock.obj");
+
+		// wall
+		wallAlbedoMap = LoadTexture("data/textures/pbr/wall/albedo.png");
+		wallNormalMap = LoadTexture("data/textures/pbr/wall/normal.png");
+		wallMetallicMap = LoadTexture("data/textures/pbr/wall/metallic.png");
+		wallRoughnessMap = LoadTexture("data/textures/pbr/wall/roughness.png");
+		wallAOMap = LoadTexture("data/textures/pbr/wall/ao.png");
+
 
 #pragma region Shader Loading
 
@@ -422,18 +438,17 @@ namespace gpr5300
 		modelMatrices.resize(amount);
 		modelMatrices1.resize(amount);
 
-		srand(static_cast<unsigned int>(time_)); // initialize random seed
 		for (unsigned int i = 0; i < amount; i++)
 		{
 
 			glm::mat4 model = glm::mat4(1.0f);
-			model = glm::translate(model, glm::vec3(5.0f, 0.0f, 0.0f));
+			model = glm::translate(model, glm::vec3(5.0f + (i * 2.0f), 0.0f, 0.0f));
 
 			modelMatrices[i].model = model;
 			modelMatrices[i].normal = glm::transpose(glm::inverse(model));
 
 			model = glm::mat4(1.0f);
-			model = glm::translate(model, glm::vec3(-5.0f, 0.0f, 0.0f));
+			model = glm::translate(model, glm::vec3(-5.0f - (i * 2.0f), 0.0f, 0.0f));
 
 			modelMatrices1[i].model = model;
 			modelMatrices1[i].normal = glm::transpose(glm::inverse(model));
@@ -441,8 +456,8 @@ namespace gpr5300
 
 
 		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(0.0f, -2.0f, 0.0f));
-		model = glm::scale(model, glm::vec3(25.0f, 1.0f, 25.0f));
+		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(25.0f, 0.1f, 25.0f));
 		planeMatrice.model = model;
 		planeMatrice.normal = glm::transpose(glm::inverse(model));
 
@@ -670,6 +685,29 @@ namespace gpr5300
 
 #pragma region gBuffer setting
 
+		//Geom pass
+		//------------------------
+		pipelines[0].use();
+		pipelines[0].setInt("baseColorMap", 0);
+		pipelines[0].setInt("normalMap", 1);
+		pipelines[0].setInt("metallicMap", 2);
+		pipelines[0].setInt("roughnessMap", 3);
+		pipelines[0].setInt("aoMap", 4);
+
+		// Lighting pass
+		// -------------
+		pipelines[1].use();
+		pipelines[1].setInt("gPosition", 0);
+		pipelines[1].setInt("gNormal", 1);
+		pipelines[1].setInt("gBaseColor", 2);
+		pipelines[1].setInt("gNormalMap", 3);
+		pipelines[1].setInt("gARM", 4);
+		pipelines[1].setInt("gSSAO", 5);
+		//IBL
+		pipelines[1].setInt("irradianceMap", 6);
+		pipelines[1].setInt("prefilterMap", 7);
+		pipelines[1].setInt("brdfLUT", 8);
+
 		// configure g-buffer framebuffer
 		// ------------------------------
 		glGenFramebuffers(1, &gBuffer);
@@ -688,27 +726,41 @@ namespace gpr5300
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormal, 0);
-		// color + specular color buffer
-		glGenTextures(1, &gAlbedo);
-		glBindTexture(GL_TEXTURE_2D, gAlbedo);
+		// color buffer
+		glGenTextures(1, &gBaseColor);
+		glBindTexture(GL_TEXTURE_2D, gBaseColor);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gAlbedo, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gBaseColor, 0);
+		//normal map buffer
+		glGenTextures(1, &gNormalMap);
+		glBindTexture(GL_TEXTURE_2D, gNormalMap);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, gNormalMap, 0);
 		//ARM
 		glGenTextures(1, &gARM);
 		glBindTexture(GL_TEXTURE_2D, gARM);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, gARM, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, gARM, 0);
+		//SSAO
+		glGenTextures(1, &gSSAO);
+		glBindTexture(GL_TEXTURE_2D, gSSAO);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT5, GL_TEXTURE_2D, gSSAO, 0);
 
 		// tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
-		unsigned int attachments[4] = {
+		unsigned int attachments[6] = {
 			GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2,
-			GL_COLOR_ATTACHMENT3, /*GL_COLOR_ATTACHMENT4, /*GL_COLOR_ATTACHMENT5*/};
+			GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 ,GL_COLOR_ATTACHMENT5};
 
-		glDrawBuffers(4, attachments);
+		glDrawBuffers(6, attachments);
 		// create and attach depth buffer (renderbuffer)
 		glGenRenderbuffers(1, &rboDepth);
 		glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
@@ -722,46 +774,15 @@ namespace gpr5300
 
 #pragma endregion
 
-#pragma region Light pass setting
-
-		// shader configuration
-		// --------------------
-		pipelines[1].use();
-		pipelines[1].setInt("gPosition", 0);
-		pipelines[1].setInt("gNormal", 1);
-		pipelines[1].setInt("gAlbedo", 2);
-		pipelines[1].setInt("gARM", 3);
-		pipelines[1].setInt("gSsao", 4);
-		//IBL
-		pipelines[1].setInt("irradianceMap", 5);
-		pipelines[1].setInt("prefilterMap", 6);
-		pipelines[1].setInt("brdfLUT", 7);
-
-
-#pragma endregion
-
-#pragma region LightBoxes setting
-
-		// lighting info
-		// -------------
-		srand(13);
-		for (unsigned int i = 0; i < NR_LIGHTS; i++)
-		{
-			// calculate slightly random offsets
-			float xPos = static_cast<float>(((rand() % 100) / 100.0) * 6.0 - 3.0);
-			float yPos = static_cast<float>(((rand() % 100) / 100.0) * 6.0 - 4.0);
-			float zPos = static_cast<float>(((rand() % 100) / 100.0) * 6.0 - 3.0);
-			lightPositions.push_back(glm::vec3(xPos, yPos, zPos));
-			// also calculate random color
-			float rColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.)
-			float gColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.)
-			float bColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.)
-			lightColors.push_back(glm::vec3(rColor, gColor, bColor));
-		}
-
-#pragma endregion
-
 #pragma region SSAO setting
+
+		//SSAO
+		pipelines[3].use();
+		pipelines[3].setInt("gPosition", 0);
+		pipelines[3].setInt("gNormal", 1);
+		pipelines[3].setInt("texNoise", 2);
+		pipelines[4].use();
+		pipelines[4].setInt("ssaoInput", 0);
 
 		// also create framebuffer to hold SSAO processing stage 
 		// -----------------------------------------------------
@@ -821,12 +842,42 @@ namespace gpr5300
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-		pipelines[4].use();
-		pipelines[4].setInt("gPosition", 0);
-		pipelines[4].setInt("gNormal", 1);
-		pipelines[4].setInt("texNoise", 2);
-		pipelines[5].use();
-		pipelines[5].setInt("ssaoInput", 0);
+
+#pragma endregion
+
+#pragma region LightBoxes setting
+
+		// lighting info
+		// -------------
+		//srand(13);
+		//int xPos = -6;
+		//int yPos = 1;
+		//int zPos = 6;
+		//for (unsigned int i = 0; i < NR_LIGHTS; i++)
+		//{
+		//	if (xPos == 6)
+		//	{
+		//		zPos -= 6;
+		//		xPos = -6;
+		//	}
+
+		//	//// calculate slightly random offsets
+		//	//float xPos = static_cast<float>(((rand() % 100) / 100.0) * 6.0 - 3.0);
+		//	//float yPos = static_cast<float>(((rand() % 100) / 100.0) * 6.0 - 4.0);
+		//	//float zPos = static_cast<float>(((rand() % 100) / 100.0) * 6.0 - 3.0);
+		//	lightPositions.push_back(glm::vec3(xPos, yPos, zPos));
+
+		//	// also calculate random color
+		//	float rColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.)
+		//	float gColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.)
+		//	float bColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.)
+		//	lightColors.push_back(glm::vec3(rColor, gColor, bColor));
+
+		//	xPos += 3;
+		//}
+
+		lightPositions.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+		lightColors.push_back(glm::vec3(1.0f, 1.0f, 1.0f));
 
 #pragma endregion
 
@@ -855,10 +906,13 @@ namespace gpr5300
 		pipelines[0].setMat4("projection", projection);
 		pipelines[0].setMat4("view", view);
 		
-		std::vector<Model> models;
+		/*std::vector<Model> models;
 		models.push_back(backpack);
 		models.push_back(rock);
-		DrawScene(pipelines[0], models);
+		DrawScene(pipelines[0], models);*/
+		DrawScene(pipelines[0]);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 #pragma endregion
 
@@ -868,11 +922,13 @@ namespace gpr5300
 		// ------------------------
 		glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
 		glClear(GL_COLOR_BUFFER_BIT);
-		pipelines[4].use();
+		pipelines[3].use();
 		// Send kernel + rotation 
 		for (unsigned int i = 0; i < 64; ++i)
-			pipelines[4].setVec3("samples[" + std::to_string(i) + "]", ssaoKernel[i]);
-		pipelines[4].setMat4("projection", projection);
+		{
+			pipelines[3].setVec3("samples[" + std::to_string(i) + "]", ssaoKernel[i]);
+		}
+		pipelines[3].setMat4("projection", projection);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, gPosition);
 		glActiveTexture(GL_TEXTURE1);
@@ -886,7 +942,7 @@ namespace gpr5300
 		// ------------------------------------
 		glBindFramebuffer(GL_FRAMEBUFFER, ssaoBlurFBO);
 		glClear(GL_COLOR_BUFFER_BIT);
-		pipelines[5].use();
+		pipelines[4].use();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, ssaoColorBuffer);
 		renderImage();
@@ -898,6 +954,10 @@ namespace gpr5300
 
 		// 2. lighting pass: calculate lighting by iterating over a screen filled quad pixel-by-pixel using the gbuffer's content.
 		// -----------------------------------------------------------------------------------------------------------------------
+		pipelines[1].setVec3("camPos", camera->Position);
+		pipelines[1].setMat4("view", view);
+		pipelines[1].setMat4("projection", projection);
+
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		pipelines[1].use();
 		glActiveTexture(GL_TEXTURE0);
@@ -905,22 +965,30 @@ namespace gpr5300
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, gNormal);
 		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, gAlbedo);
+		glBindTexture(GL_TEXTURE_2D, gBaseColor);
 		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, gARM);
+		glBindTexture(GL_TEXTURE_2D, gNormalMap);
 		glActiveTexture(GL_TEXTURE4);
-		glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
-		// bind pre-computed IBL data
+		glBindTexture(GL_TEXTURE_2D, gARM);
+
+		//SSAO
 		glActiveTexture(GL_TEXTURE5);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
+		glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
+
+		// bind pre-computed IBL data
 		glActiveTexture(GL_TEXTURE6);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
 		glActiveTexture(GL_TEXTURE7);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap);
+		glActiveTexture(GL_TEXTURE8);
 		glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
+
 		// send light relevant uniforms
 		for (unsigned int i = 0; i < lightPositions.size(); i++)
 		{
-			pipelines[1].setVec3("lights[" + std::to_string(i) + "].Position", lightPositions[i]);
+			glm::vec3 lightPosView = glm::vec3(camera->GetViewMatrix() * glm::vec4(lightPositions[i], 1.0));
+
+			pipelines[1].setVec3("lights[" + std::to_string(i) + "].Position", lightPosView);
 			pipelines[1].setVec3("lights[" + std::to_string(i) + "].Color", lightColors[i]);
 			// update attenuation parameters and calculate radius
 			const float constant = 1.0f; // note that we don't send this to the shader, we assume it is always 1.0 (in our case)
@@ -933,9 +1001,6 @@ namespace gpr5300
 			float radius = (-linear + std::sqrt(linear * linear - 4 * quadratic * (constant - (256.0f / 5.0f) * maxBrightness))) / (2.0f * quadratic);
 			pipelines[1].setFloat("lights[" + std::to_string(i) + "].Radius", radius);
 		}
-		pipelines[1].setVec3("viewPos", camera->Position);
-		pipelines[1].setMat4("view", view);
-		pipelines[1].setMat4("projection", projection);
 		// finally render quad
 		renderImage();
 
@@ -1013,32 +1078,29 @@ namespace gpr5300
 		rock.DrawStaticInstances(pipeline, amount);
 		backpack.DrawStaticInstances(pipeline, amount);
 
-		for (auto& model : models)
-		{
-			model.DrawStaticInstances(pipeline, amount);
-		}
+		//for (auto& model : models)
+		//{
+		//	model.DrawStaticInstances(pipeline, amount);
+		//}
 
+		//wall
 		glActiveTexture(GL_TEXTURE0);
-		glUniform1i(glGetUniformLocation(pipeline.ID, "gPosition"), 0);
-		glBindTexture(GL_TEXTURE_2D, woodTexture);
-
+		glBindTexture(GL_TEXTURE_2D, wallAlbedoMap);
 		glActiveTexture(GL_TEXTURE1);
-		glUniform1i(glGetUniformLocation(pipeline.ID, "gNormal"), 2);
-		glBindTexture(GL_TEXTURE_2D, woodTexture);
-
+		glBindTexture(GL_TEXTURE_2D, wallNormalMap);
 		glActiveTexture(GL_TEXTURE2);
-		glUniform1i(glGetUniformLocation(pipeline.ID, "gAlbedo"), 3);
-		glBindTexture(GL_TEXTURE_2D, woodTexture);
-
+		glBindTexture(GL_TEXTURE_2D, wallMetallicMap);
 		glActiveTexture(GL_TEXTURE3);
-		glUniform1i(glGetUniformLocation(pipeline.ID, "gARM"), 4);
-		glBindTexture(GL_TEXTURE_2D, woodTexture);
+		glBindTexture(GL_TEXTURE_2D, wallRoughnessMap);
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D, wallAOMap);
 
 		glBindVertexArray(planeVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		//Have to unbind the vertex array at the end of Geometry pass
 		glBindVertexArray(0);
+
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 

@@ -34,6 +34,14 @@ namespace gpr5300
 		unsigned int specularNr = 1;
 		unsigned int normalNr = 1;
 		unsigned int heightNr = 1;
+
+		unsigned int baseColorMap = 1;
+		unsigned int normalMap = 1;
+		unsigned int metallicMap = 1;
+		unsigned int roughnessMap = 1;
+		unsigned int aoMap = 1;
+		
+
 		for (unsigned int i = 0; i < textures.size(); i++)
 		{
 			glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
@@ -49,10 +57,21 @@ namespace gpr5300
 			else if (name == "texture_height")
 				number = std::to_string(heightNr++); // transfer unsigned int to string
 
+			else if (name == "texture_base")
+				number = std::to_string(baseColorMap++); // transfer unsigned int to string
+			else if (name == "texture_normals")
+				number = std::to_string(normalMap++); // transfer unsigned int to string
+			else if (name == "texture_metallic")
+				number = std::to_string(metallicMap++); // transfer unsigned int to string
+			else if (name == "texture_roughness")
+				number = std::to_string(roughnessMap++); // transfer unsigned int to string
+			else if (name == "texture_ao")
+				number = std::to_string(aoMap++); // transfer unsigned int to string
+
 			// now set the sampler to the correct texture unit
 			glUniform1i(glGetUniformLocation(pipeline.ID, (name + number).c_str()), i);
 			// and finally bind the texture
-			glBindTexture(GL_TEXTURE_2D, textures[i].id);
+			glBindTexture(GL_TEXTURE_2D, textures[i].id);	
 		}
 	}
 

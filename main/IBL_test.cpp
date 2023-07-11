@@ -352,6 +352,7 @@ namespace gpr5300
 		wallRoughnessMap = LoadTexture("data/textures/pbr/wall/roughness.png");
 		wallAOMap = LoadTexture("data/textures/pbr/wall/ao.png");
 
+#pragma region PBR setup
 
 		// pbr: setup framebuffer
 		// ----------------------
@@ -548,6 +549,7 @@ namespace gpr5300
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+#pragma endregion
 
 		// initialize static shader uniforms before rendering
 		// --------------------------------------------------

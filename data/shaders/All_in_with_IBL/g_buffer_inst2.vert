@@ -8,21 +8,24 @@ layout (location = 3) in mat4 aModel;
 //aNormalMatrix covers location 7 to 10 (4 times mat4)
 layout (location = 7) in mat4 aNormalMatrix;
 
+
 out vec2 TexCoords;
 out vec3 WorldPos;
 out vec3 Normal;
+out vec3 FragPos;
 
 uniform mat4 view;
 uniform mat4 projection;
 
 void main()
 {
-    TexCoords = aTexCoords;
 
-    vec4 worldPos = aModel * vec4(aPos, 1.0);
+    vec4 worldPos = view * aModel * vec4(aPos, 1.0);
     WorldPos = worldPos.xyz; 
-    
-    Normal = mat3(aNormalMatrix) * aNormal;
 
-    gl_Position = projection * view *  worldPos;
+    Normal = mat3(aNormalMatrix) * aNormal;
+  
+    TexCoords = aTexCoords;
+    
+    gl_Position = projection * view * aModel * vec4(aPos, 1.0);
 }

@@ -282,17 +282,33 @@ namespace gpr5300
 		// normal: texture_normalN
 
 		// 1. diffuse maps
-		std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "data/objects/texture_diffuse");
+		std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
 		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 		// 2. specular maps
-		std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "data/objects/texture_specular");
+		std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
 		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 		// 3. normal maps
-		std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "data/objects/texture_normal");
+		std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
 		textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
 		// 4. height maps
-		std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "data/objects/texture_height");
+		std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
 		textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
+		// 5. base color map 
+		std::vector<Texture> baseMaps = loadMaterialTextures(material, aiTextureType_BASE_COLOR, "texture_base");
+		textures.insert(textures.end(), baseMaps.begin(), baseMaps.end());
+		// 6. normal map
+		std::vector<Texture> normalsMaps = loadMaterialTextures(material, aiTextureType_NORMAL_CAMERA, "texture_normals");
+		textures.insert(textures.end(), normalsMaps.begin(), normalsMaps.end());
+		// 7. ao map 
+		std::vector<Texture> aoMaps = loadMaterialTextures(material, aiTextureType_AMBIENT_OCCLUSION, "texture_ao");
+		textures.insert(textures.end(), aoMaps.begin(), aoMaps.end());
+		// 8. roughness map 
+		std::vector<Texture> roughnessMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE_ROUGHNESS, "texture_roughness");
+		textures.insert(textures.end(), roughnessMaps.begin(), roughnessMaps.end());
+		// 9. metallic map 
+		std::vector<Texture> metallicMaps = loadMaterialTextures(material, aiTextureType_METALNESS, "texture_metallic");
+		textures.insert(textures.end(), metallicMaps.begin(), metallicMaps.end());
+			
 
 		// return a mesh object created from the extracted mesh data
 		return Mesh(vertices, indices, textures);
