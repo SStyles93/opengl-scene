@@ -376,11 +376,11 @@ namespace gpr5300
 		rock = Model("data/objects/rock/rock.obj");
 
 		// wall
-		wallAlbedoMap = LoadTexture("data/textures/pbr/wall/albedo.png");
-		wallNormalMap = LoadTexture("data/textures/pbr/wall/normal.png");
-		wallMetallicMap = LoadTexture("data/textures/pbr/wall/metallic.png");
-		wallRoughnessMap = LoadTexture("data/textures/pbr/wall/roughness.png");
-		wallAOMap = LoadTexture("data/textures/pbr/wall/ao.png");
+		wallAlbedoMap = LoadTexture("data/textures/pbr/gold/albedo.png");
+		wallNormalMap = LoadTexture("data/textures/pbr/gold/normal.png");
+		wallMetallicMap = LoadTexture("data/textures/pbr/gold/metallic.png");
+		wallRoughnessMap = LoadTexture("data/textures/pbr/gold/roughness.png");
+		wallAOMap = LoadTexture("data/textures/pbr/gold/ao.png");
 
 
 #pragma region Shader Loading
@@ -688,11 +688,11 @@ namespace gpr5300
 		//Geom pass
 		//------------------------
 		pipelines[0].use();
-		pipelines[0].setInt("baseColorMap", 0);
-		pipelines[0].setInt("normalMap", 1);
-		pipelines[0].setInt("metallicMap", 2);
-		pipelines[0].setInt("roughnessMap", 3);
-		pipelines[0].setInt("aoMap", 4);
+		pipelines[0].setInt("texture_diffuse1", 0);
+		pipelines[0].setInt("texture_normal1", 1);
+		pipelines[0].setInt("texture_metallic1", 2);
+		pipelines[0].setInt("texture_roughness1", 3);
+		pipelines[0].setInt("texture_ao1", 4);
 
 		// Lighting pass
 		// -------------

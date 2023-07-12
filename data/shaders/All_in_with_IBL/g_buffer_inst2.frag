@@ -11,22 +11,22 @@ in vec2 TexCoords;
 in vec3 WorldPos;
 in vec3 Normal;
 
-uniform sampler2D baseColorMap;
-uniform sampler2D normalMap;
-uniform sampler2D metallicMap;
-uniform sampler2D roughnessMap;
-uniform sampler2D aoMap;
+uniform sampler2D texture_diffuse1;
+uniform sampler2D texture_normal1;
+uniform sampler2D texture_metallic1;
+uniform sampler2D texture_roughness1;
+uniform sampler2D texture_ao1;
 
 void main()
 {    
     gPosition = WorldPos;
     gNormal = normalize(Normal);
     //Base color
-    gBaseColor.rgb = texture(baseColorMap, TexCoords).rgb;
+    gBaseColor.rgb = texture(texture_diffuse1, TexCoords).rgb;
     //NormalMap
-    gNormalMap.rgb = texture(normalMap, TexCoords).rgb;
+    gNormalMap.rgb = texture(texture_normal1, TexCoords).rgb;
     // Ambient Roughness Metallic
-    gARM.r = texture(aoMap, TexCoords).r;
-    gARM.g = texture(roughnessMap, TexCoords).r;
-    gARM.b = texture(metallicMap, TexCoords).r;
+    gARM.r = texture(texture_ao1, TexCoords).r;
+    gARM.g = texture(texture_roughness1, TexCoords).r;
+    gARM.b = texture(texture_metallic1, TexCoords).r;
 }

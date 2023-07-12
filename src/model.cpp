@@ -293,12 +293,6 @@ namespace gpr5300
 		// 4. height maps
 		std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
 		textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
-		// 5. base color map 
-		std::vector<Texture> baseMaps = loadMaterialTextures(material, aiTextureType_BASE_COLOR, "texture_base");
-		textures.insert(textures.end(), baseMaps.begin(), baseMaps.end());
-		// 6. normal map
-		std::vector<Texture> normalsMaps = loadMaterialTextures(material, aiTextureType_NORMAL_CAMERA, "texture_normals");
-		textures.insert(textures.end(), normalsMaps.begin(), normalsMaps.end());
 		// 7. ao map 
 		std::vector<Texture> aoMaps = loadMaterialTextures(material, aiTextureType_AMBIENT_OCCLUSION, "texture_ao");
 		textures.insert(textures.end(), aoMaps.begin(), aoMaps.end());
