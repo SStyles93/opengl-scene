@@ -103,13 +103,18 @@ namespace gpr5300
 	{
 		for (unsigned int i = 0; i < meshes.size(); i++)
 		{
+			auto error = glGetError();
+			assert(glGetError() == 0);
 			meshes[i].BindMaterial(pipeline);
+			assert(glGetError() == 0);
 			glBindVertexArray(meshes[i].VAO);
 			glDrawElementsInstanced(
 				GL_TRIANGLES,
 				static_cast<unsigned int>(meshes[i].indices.size()),
 				GL_UNSIGNED_INT, 0, count);
+			assert(glGetError() == 0);
 			glBindVertexArray(0);
+			assert(glGetError() == 0);
 		}
 	}
 
@@ -288,13 +293,10 @@ namespace gpr5300
 		std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
 		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 		// 3. normal maps
-		std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
+		std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
 		textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
-		// 4. height maps
-		std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
-		textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 		// 7. ao map 
-		std::vector<Texture> aoMaps = loadMaterialTextures(material, aiTextureType_AMBIENT_OCCLUSION, "texture_ao");
+		std::vector<Texture> aoMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_ao");
 		textures.insert(textures.end(), aoMaps.begin(), aoMaps.end());
 		// 8. roughness map 
 		std::vector<Texture> roughnessMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE_ROUGHNESS, "texture_roughness");

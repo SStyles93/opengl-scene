@@ -20,8 +20,11 @@ uniform mat4 projection;
 void main()
 {
 
-    vec4 worldPos = view * aModel * vec4(aPos, 1.0);
+    vec4 worldPos = aModel * vec4(aPos, 1.0);
     WorldPos = worldPos.xyz; 
+
+    vec4 fragPos = view * aModel * vec4(aPos, 1.0);
+    FragPos = fragPos.xyz; 
 
     Normal = mat3(aNormalMatrix) * aNormal;
   

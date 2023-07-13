@@ -1,5 +1,7 @@
 #include "camera.h"
 
+#include <iostream>
+
 namespace gpr5300
 {
 

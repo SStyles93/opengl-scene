@@ -13,7 +13,7 @@
 namespace gpr5300
 {
 	Engine::Engine(Scene* scene) : scene_(scene) {}
-	Engine::Engine(Scene* scene, Camera* camera) : scene_(scene) {}
+	//Engine::Engine(Scene* scene, Camera* camera) : scene_(scene) {}
 
 	void Engine::Run()
 	{

@@ -28,7 +28,7 @@ namespace gpr5300
 		std::vector<Pipeline> pipelines{};
 
 		unsigned int gBuffer;
-		unsigned int gPosition, gNormal, gBaseColor, gNormalMap ,gARM, gSSAO;
+		unsigned int gPosition, gNormal, gBaseColor, gARM, gSSAO;
 		unsigned int rboDepth;
 		
 		unsigned int quadVAO = 0;
@@ -698,15 +698,14 @@ namespace gpr5300
 		// -------------
 		pipelines[1].use();
 		pipelines[1].setInt("gPosition", 0);
-		pipelines[1].setInt("gNormal", 1);
-		pipelines[1].setInt("gBaseColor", 2);
-		pipelines[1].setInt("gNormalMap", 3);
-		pipelines[1].setInt("gARM", 4);
-		pipelines[1].setInt("gSSAO", 5);
+		pipelines[1].setInt("gBaseColor", 1);
+		pipelines[1].setInt("gNormal", 2);
+		pipelines[1].setInt("gARM", 3);
+		pipelines[1].setInt("gSSAO", 4);
 		//IBL
-		pipelines[1].setInt("irradianceMap", 6);
-		pipelines[1].setInt("prefilterMap", 7);
-		pipelines[1].setInt("brdfLUT", 8);
+		pipelines[1].setInt("irradianceMap", 5);
+		pipelines[1].setInt("prefilterMap", 6);
+		pipelines[1].setInt("brdfLUT", 7);
 
 		// configure g-buffer framebuffer
 		// ------------------------------
@@ -719,48 +718,41 @@ namespace gpr5300
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPosition, 0);
-		// normal color buffer
-		glGenTextures(1, &gNormal);
-		glBindTexture(GL_TEXTURE_2D, gNormal);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormal, 0);
 		// color buffer
 		glGenTextures(1, &gBaseColor);
 		glBindTexture(GL_TEXTURE_2D, gBaseColor);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gBaseColor, 0);
-		//normal map buffer
-		glGenTextures(1, &gNormalMap);
-		glBindTexture(GL_TEXTURE_2D, gNormalMap);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gBaseColor, 0);
+		// normal color buffer
+		glGenTextures(1, &gNormal);
+		glBindTexture(GL_TEXTURE_2D, gNormal);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, gNormalMap, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gNormal, 0);
 		//ARM
 		glGenTextures(1, &gARM);
 		glBindTexture(GL_TEXTURE_2D, gARM);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, gARM, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, gARM, 0);
 		//SSAO
 		glGenTextures(1, &gSSAO);
 		glBindTexture(GL_TEXTURE_2D, gSSAO);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT5, GL_TEXTURE_2D, gSSAO, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, gSSAO, 0);
 
 		// tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
-		unsigned int attachments[6] = {
+		unsigned int attachments[5] = {
 			GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2,
-			GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 ,GL_COLOR_ATTACHMENT5};
+			GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 /*, GL_COLOR_ATTACHMENT5*/};
 
-		glDrawBuffers(6, attachments);
+		glDrawBuffers(5, attachments);
 		// create and attach depth buffer (renderbuffer)
 		glGenRenderbuffers(1, &rboDepth);
 		glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
@@ -781,6 +773,7 @@ namespace gpr5300
 		pipelines[3].setInt("gPosition", 0);
 		pipelines[3].setInt("gNormal", 1);
 		pipelines[3].setInt("texNoise", 2);
+		pipelines[3].setInt("gSSAO", 3);
 		pipelines[4].use();
 		pipelines[4].setInt("ssaoInput", 0);
 
@@ -929,12 +922,15 @@ namespace gpr5300
 			pipelines[3].setVec3("samples[" + std::to_string(i) + "]", ssaoKernel[i]);
 		}
 		pipelines[3].setMat4("projection", projection);
+		pipelines[3].setMat4("view", view);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, gPosition);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, gNormal);
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, noiseTexture);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, gSSAO);
 		renderImage();
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -954,40 +950,39 @@ namespace gpr5300
 
 		// 2. lighting pass: calculate lighting by iterating over a screen filled quad pixel-by-pixel using the gbuffer's content.
 		// -----------------------------------------------------------------------------------------------------------------------
+		pipelines[1].use();
 		pipelines[1].setVec3("camPos", camera->Position);
 		pipelines[1].setMat4("view", view);
 		pipelines[1].setMat4("projection", projection);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		pipelines[1].use();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, gPosition);
 		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, gNormal);
-		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, gBaseColor);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, gNormal);
 		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, gNormalMap);
-		glActiveTexture(GL_TEXTURE4);
 		glBindTexture(GL_TEXTURE_2D, gARM);
 
 		//SSAO
-		glActiveTexture(GL_TEXTURE5);
+		glActiveTexture(GL_TEXTURE4);
 		glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
 
 		// bind pre-computed IBL data
-		glActiveTexture(GL_TEXTURE6);
+		glActiveTexture(GL_TEXTURE5);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
-		glActiveTexture(GL_TEXTURE7);
+		glActiveTexture(GL_TEXTURE6);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap);
-		glActiveTexture(GL_TEXTURE8);
+		glActiveTexture(GL_TEXTURE7);
 		glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
 
 		// send light relevant uniforms
 		for (unsigned int i = 0; i < lightPositions.size(); i++)
 		{
-			glm::vec3 lightPosView = glm::vec3(camera->GetViewMatrix() * glm::vec4(lightPositions[i], 1.0));
-
+			//glm::vec3 lightPosView = glm::vec3(camera->GetViewMatrix() * glm::vec4(lightPositions[i], 1.0));
+			glm::vec3 lightPosView = lightPositions[i];
+			pipelines[1].use();
 			pipelines[1].setVec3("lights[" + std::to_string(i) + "].Position", lightPosView);
 			pipelines[1].setVec3("lights[" + std::to_string(i) + "].Color", lightColors[i]);
 			// update attenuation parameters and calculate radius
@@ -1074,16 +1069,15 @@ namespace gpr5300
 
 	void All_in_with_IBL::DrawScene(Pipeline& pipeline, std::vector<Model> models)
 	{
-		//Draw objects
-		rock.DrawStaticInstances(pipeline, amount);
-		backpack.DrawStaticInstances(pipeline, amount);
-
-		//for (auto& model : models)
-		//{
-		//	model.DrawStaticInstances(pipeline, amount);
-		//}
-
+	
 		//wall
+
+		pipeline.setInt("texture_diffuse1", 0);
+		pipeline.setInt("texture_normal1", 1);
+		pipeline.setInt("texture_metallic1", 2);
+		pipeline.setInt("texture_roughness1", 3);
+		pipeline.setInt("texture_ao1", 4);
+
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, wallAlbedoMap);
 		glActiveTexture(GL_TEXTURE1);
@@ -1100,6 +1094,16 @@ namespace gpr5300
 
 		//Have to unbind the vertex array at the end of Geometry pass
 		glBindVertexArray(0);
+
+
+		//Draw objects
+		rock.DrawStaticInstances(pipeline, amount);
+		backpack.DrawStaticInstances(pipeline, amount);
+
+		//for (auto& model : models)
+		//{
+		//	model.DrawStaticInstances(pipeline, amount);
+		//}
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}

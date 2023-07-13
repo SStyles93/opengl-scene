@@ -6,9 +6,8 @@ in vec2 TexCoords;
 
 //color buffers
 uniform sampler2D gPosition;
-uniform sampler2D gNormal;
 uniform sampler2D gBaseColor;
-uniform sampler2D gNormalMap;
+uniform sampler2D gNormal;
 uniform sampler2D gARM;
 
 //SSAO
@@ -27,30 +26,11 @@ struct Light {
     float Quadratic;
     float Radius;
 };
-const int NR_LIGHTS = 32;
+const int NR_LIGHTS = 1;
 uniform Light lights[NR_LIGHTS];
 uniform vec3 camPos;
 
 const float PI = 3.14159265359;
-
-vec3 getNormalFromMap()
-{
-    vec3 tangentNormal = texture(gNormalMap, TexCoords).rgb * 2.0 - 1.0;
-
-    vec3 WorldPos = texture(gPosition,TexCoords).rgb;
-    vec3 Q1  = dFdx(WorldPos);
-    vec3 Q2  = dFdy(WorldPos);
-    
-    vec2 st1 = dFdx(TexCoords);
-    vec2 st2 = dFdy(TexCoords);
-
-    vec3 N = normalize(texture(gNormal, TexCoords).rgb);
-    vec3 T = normalize(Q1*st2.t - Q2*st1.t);
-    vec3 B = -normalize(cross(N, T));
-    mat3 TBN = mat3(T, B, N);
-
-    return normalize(TBN * tangentNormal);
-}
 //----------------------------------------------------------------------------
 float DistributionGGX(vec3 N, vec3 H, float roughness)
 {
@@ -99,16 +79,17 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
 // ----------------------------------------------------------------------------
 void main()
 {		
-    vec3 N = getNormalFromMap();
-    //vec3 N = normalize(texture(gNormal, TexCoords).rgb);
     vec3 WorldPos = texture(gPosition,TexCoords).rgb;
+    vec3 N = texture(gNormal, TexCoords).rgb;
     vec3 V = normalize(camPos - WorldPos);
     vec3 R = reflect(-V, N);
+
+    vec3 baseColor = pow(texture(gBaseColor, TexCoords).rgb, vec3(2.2));
 
     // calculate reflectance at normal incidence; if dia-electric (like plastic) use F0 
     // of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)    
     vec3 F0 = vec3(0.04); 
-    F0 = mix(F0, texture(gBaseColor, TexCoords).rgb, texture(gARM,TexCoords).b);
+    F0 = mix(F0, baseColor, texture(gARM,TexCoords).b);
 
     // reflectance equation
     vec3 Lo = vec3(0.0);
@@ -117,7 +98,7 @@ void main()
         // calculate per-light radiance
         vec3 L = normalize(lights[i].Position - WorldPos);
         vec3 H = normalize(V + L);
-        float distance = length(lights[i].Position - WorldPos);
+        float distance = length(lights[i].Position -  WorldPos);
         float attenuation = 1.0 / (distance * distance);
         vec3 radiance = lights[i].Color * attenuation;
 
@@ -145,7 +126,7 @@ void main()
         float NdotL = max(dot(N, L), 0.0);        
 
         // add to outgoing radiance Lo
-        Lo += (kD * texture(gBaseColor, TexCoords).rgb / PI + specular) * radiance * NdotL;  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
+        Lo += (kD * baseColor / PI + specular) * radiance * NdotL;  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
     }   
     //IBL ambient lighting
     vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, texture(gARM, TexCoords).g);
@@ -155,7 +136,7 @@ void main()
     kD *= 1.0 - texture(gARM, TexCoords).b;
 
     vec3 irradiance = texture(irradianceMap, N).rgb;
-    vec3 diffuse = irradiance * texture(gBaseColor, TexCoords).rgb;
+    vec3 diffuse = irradiance * baseColor;
 
      const float MAX_REFLECTION_LOD = 4.0;
 
@@ -176,5 +157,4 @@ void main()
     color = pow(color, vec3(1.0/2.2)); 
 
     FragColor = vec4(color, 1.0);
-
 }
