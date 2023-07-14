@@ -42,9 +42,11 @@ namespace gpr5300
 
 
 		Model backpack;
-		std::vector<ModelMatrices> modelMatrices;
+		std::vector<ModelMatrices> backpackMatrices;
 		Model rock;
-		std::vector<ModelMatrices> modelMatrices1;
+		std::vector<ModelMatrices> rockMatrices;
+		Model poulpe;
+		std::vector<ModelMatrices> poulpeMatrices;
 
 		unsigned int amount = 1;
 
@@ -87,8 +89,8 @@ namespace gpr5300
 		unsigned int captureRBO;
 
 		//Shadows
-		glm::vec3 dirLightDirection{-1.0f, -4.0f, -1.0f};
-		const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+		glm::vec3 dirLightDirection{ -1.0f, -4.0f, -1.0f };
+		const unsigned int SHADOW_WIDTH = 4096, SHADOW_HEIGHT = 4096;
 		unsigned int depthMapFBO;
 		unsigned int depthMap;
 		glm::mat4 lightProjection, lightView;
@@ -119,13 +121,13 @@ namespace gpr5300
 		glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), nullptr);
 		glEnableVertexAttribArray(4);
 		glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices),
-		                      reinterpret_cast<void*>(sizeof(glm::vec4)));
+			reinterpret_cast<void*>(sizeof(glm::vec4)));
 		glEnableVertexAttribArray(5);
 		glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices),
-		                      reinterpret_cast<void*>(2 * sizeof(glm::vec4)));
+			reinterpret_cast<void*>(2 * sizeof(glm::vec4)));
 		glEnableVertexAttribArray(6);
 		glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices),
-		                      reinterpret_cast<void*>(3 * sizeof(glm::vec4)));
+			reinterpret_cast<void*>(3 * sizeof(glm::vec4)));
 
 		glVertexAttribDivisor(3, 1);
 		glVertexAttribDivisor(4, 1);
@@ -134,16 +136,16 @@ namespace gpr5300
 
 		glEnableVertexAttribArray(7);
 		glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices),
-		                      reinterpret_cast<void*>(sizeof(glm::mat4)));
+			reinterpret_cast<void*>(sizeof(glm::mat4)));
 		glEnableVertexAttribArray(8);
 		glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices),
-		                      reinterpret_cast<void*>(sizeof(glm::mat4) + sizeof(glm::vec4)));
+			reinterpret_cast<void*>(sizeof(glm::mat4) + sizeof(glm::vec4)));
 		glEnableVertexAttribArray(9);
 		glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices),
-		                      reinterpret_cast<void*>(sizeof(glm::mat4) + 2 * sizeof(glm::vec4)));
+			reinterpret_cast<void*>(sizeof(glm::mat4) + 2 * sizeof(glm::vec4)));
 		glEnableVertexAttribArray(10);
 		glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices),
-		                      reinterpret_cast<void*>(sizeof(glm::mat4) + 3 * sizeof(glm::vec4)));
+			reinterpret_cast<void*>(sizeof(glm::mat4) + 3 * sizeof(glm::vec4)));
 
 		glVertexAttribDivisor(7, 1);
 		glVertexAttribDivisor(8, 1);
@@ -351,13 +353,14 @@ namespace gpr5300
 
 		backpack = Model("data/objects/backpack/backpack.obj");
 		rock = Model("data/objects/rock/rock.obj");
+		poulpe = Model("data/objects/poulpe/PoulpeSam.obj");
 
 		// wall
-		wallAlbedoMap = LoadTexture("data/textures/pbr/gold/albedo.png");
-		wallNormalMap = LoadTexture("data/textures/pbr/gold/normal.png");
-		wallMetallicMap = LoadTexture("data/textures/pbr/gold/metallic.png");
-		wallRoughnessMap = LoadTexture("data/textures/pbr/gold/roughness.png");
-		wallAOMap = LoadTexture("data/textures/pbr/gold/ao.png");
+		wallAlbedoMap = LoadTexture("data/textures/pbr/wall/albedo.png");
+		wallNormalMap = LoadTexture("data/textures/pbr/wall/normal.png");
+		wallMetallicMap = LoadTexture("data/textures/pbr/wall/metallic.png");
+		wallRoughnessMap = LoadTexture("data/textures/pbr/wall/roughness.png");
+		wallAOMap = LoadTexture("data/textures/pbr/wall/ao.png");
 
 
 #pragma region Shader Loading
@@ -417,37 +420,28 @@ namespace gpr5300
 
 #pragma region ModelMatrices setting
 
-		modelMatrices.resize(amount);
-		modelMatrices1.resize(amount);
+		backpackMatrices.resize(amount);
+		rockMatrices.resize(amount);
+		poulpeMatrices.resize(amount);
 
 		for (unsigned int i = 0; i < amount; i++)
 		{
-			glm::mat4 model = glm::mat4(1.0f);
-			model = glm::translate(model, glm::vec3(5.0f + (i * 2.0f), 2.0f, 0.0f));
+			backpackMatrices[i].SetObject(glm::vec3(5.0f, 1.5f + (i * 2.0f), 0.0f));
 
-			modelMatrices[i].model = model;
-			modelMatrices[i].normal = glm::transpose(glm::inverse(model));
+			rockMatrices[i].SetObject(glm::vec3(-5.0f, 1.5f + (i * 2.0f), 0.0f));
 
-			model = glm::mat4(1.0f);
-			model = glm::translate(model, glm::vec3(-5.0f - (i * 2.0f), 2.0f, 0.0f));
-
-			modelMatrices1[i].model = model;
-			modelMatrices1[i].normal = glm::transpose(glm::inverse(model));
+			poulpeMatrices[i].SetObject(glm::vec3(0.0f, 8.5f, 0.0f));
 		}
 
-
-		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-		model = glm::scale(model, glm::vec3(25.0f, 0.1f, 25.0f));
-		planeMatrice.model = model;
-		planeMatrice.normal = glm::transpose(glm::inverse(model));
+		planeMatrice.SetObject(VEC3_ZERO, VEC3_UP, 0.0f, glm::vec3(25.0f, 0.1f, 25.0f));
 
 #pragma endregion
 
 #pragma region Objects setting
 
-		backpack.SetUpVBO(modelMatrices, amount);
-		rock.SetUpVBO(modelMatrices1, amount);
+		backpack.SetUpVBO(backpackMatrices, amount);
+		rock.SetUpVBO(rockMatrices, amount);
+		poulpe.SetUpVBO(poulpeMatrices, amount);
 
 		SetUpPlane();
 
@@ -585,7 +579,7 @@ namespace gpr5300
 		for (unsigned int i = 0; i < 64; ++i)
 		{
 			glm::vec3 sample(randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0,
-			                 randomFloats(generator));
+				randomFloats(generator));
 			sample = glm::normalize(sample);
 			sample *= randomFloats(generator);
 			float scale = float(i) / 64.0f;
@@ -631,7 +625,7 @@ namespace gpr5300
 		// ---------------------------------
 		stbi_set_flip_vertically_on_load(true);
 		int width, height, nrComponents;
-		float* data = stbi_loadf("data/textures/environment1.hdr", &width, &height, &nrComponents, 0);
+		float* data = stbi_loadf(environmentPath, &width, &height, &nrComponents, 0);
 		if (data)
 		{
 			glGenTextures(1, &hdrTexture);
@@ -693,7 +687,7 @@ namespace gpr5300
 		{
 			pipelines[5].setMat4("view", captureViews[i]);
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, envCubemap,
-			                       0);
+				0);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 			renderEnvironmentCube();
@@ -736,7 +730,7 @@ namespace gpr5300
 		{
 			pipelines[6].setMat4("view", captureViews[i]);
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-			                       irradianceMap, 0);
+				irradianceMap, 0);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 			renderEnvironmentCube();
@@ -785,7 +779,7 @@ namespace gpr5300
 			{
 				pipelines[7].setMat4("view", captureViews[i]);
 				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-				                       prefilterMap, mip);
+					prefilterMap, mip);
 
 				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 				renderEnvironmentCube();
@@ -821,7 +815,7 @@ namespace gpr5300
 		// initialize static shader uniforms before rendering
 		// --------------------------------------------------
 		glm::mat4 projection = glm::perspective(glm::radians(camera->Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT,
-		                                        0.1f, 100.0f);
+			0.1f, 100.0f);
 		pipelines[1].use();
 		pipelines[1].setMat4("projection", projection);
 
@@ -878,12 +872,12 @@ namespace gpr5300
 		glGenTextures(1, &depthMap);
 		glBindTexture(GL_TEXTURE_2D, depthMap);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
-		             NULL);
+			NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-		float borderColor[] = {1.0, 1.0, 1.0, 1.0};
+		float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
 		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 		// attach depth texture as FBO's depth buffer
 		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
@@ -905,10 +899,10 @@ namespace gpr5300
 
 		// 1. render depth of scene to texture (from light's perspective)
 		// --------------------------------------------------------------
-		glCullFace(GL_FRONT);
+		//glCullFace(GL_FRONT);
 		//lightProjection = glm::perspective(glm::radians(45.0f), (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT, near_plane, far_plane); // note that if you use a perspective projection matrix you'll have to change the light position as the current light position isn't enough to reflect the whole scene
 		lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
-		glm::vec3 target{0.0f, 0.0f, 0.0f};
+		glm::vec3 target{ 0.0f, 0.0f, 0.0f };
 		lightView = glm::lookAt(target - dirLightDirection, target, glm::vec3(0.0, 1.0, 0.0));
 		lightSpaceMatrix = lightProjection * lightView;
 		// render scene from light's point of view
@@ -919,8 +913,9 @@ namespace gpr5300
 		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 		glClear(GL_DEPTH_BUFFER_BIT);
 
-		rock.DrawShadow(modelMatrices1);
-		backpack.DrawShadow(modelMatrices);
+		poulpe.DrawShadow(poulpeMatrices);
+		rock.DrawShadow(rockMatrices);
+		backpack.DrawShadow(backpackMatrices);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		// reset viewport
@@ -941,7 +936,7 @@ namespace gpr5300
 		glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glm::mat4 projection = glm::perspective(glm::radians(camera->Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT,
-		                                        0.1f, 100.0f);
+			0.1f, 100.0f);
 		glm::mat4 view = camera->GetViewMatrix();
 
 		pipelines[0].use();
@@ -1065,7 +1060,7 @@ namespace gpr5300
 		// the internal formats are implementation defined. This works on all of my systems, but if it doesn't on yours you'll likely have to write to the 		
 		// depth buffer in another shader stage (or somehow see to match the default framebuffer's internal format with the FBO's internal format).
 		glBlitFramebuffer(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_DEPTH_BUFFER_BIT,
-		                  GL_NEAREST);
+			GL_NEAREST);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -1145,6 +1140,7 @@ namespace gpr5300
 		glBindVertexArray(0);
 
 		//Draw objects
+		poulpe.DrawStaticInstances(pipeline, amount);
 		rock.DrawStaticInstances(pipeline, amount);
 		backpack.DrawStaticInstances(pipeline, amount);
 

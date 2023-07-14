@@ -10,7 +10,6 @@ namespace gpr5300
 	constexpr glm::vec3 X_AXIS = glm::vec3(1.0f, 0.0f, 0.0f);
 	constexpr glm::vec3 Y_AXIS = glm::vec3(0.0f, 1.0f, 0.0f);
 	constexpr glm::vec3 Z_AXIS = glm::vec3(0.0f, 1.0f, 1.0f);
-	constexpr  glm::vec3 VEC3_ZERO = glm::vec3(0.0f);
 
 	struct rotation
 	{

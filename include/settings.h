@@ -27,4 +27,16 @@ namespace gpr5300
 	constexpr int ACTION_KEY1 = SDL_SCANCODE_O;
 	constexpr int ACTION_KEY2 = SDL_SCANCODE_P;
 
+	constexpr char const* environmentPath = "data/textures/lakeside.hdr";
+
+	constexpr glm::vec3 VEC3_ZERO = glm::vec3{ 0.0f};
+	constexpr glm::vec3 VEC3_ONE = glm::vec3{ 1.0f};
+
+	constexpr glm::vec3 VEC3_UP = glm::vec3{ 0.0f, 1.0f, 0.0f };
+	constexpr glm::vec3 VEC3_DOWN = glm::vec3{ 0.0f, -1.0f, 0.0f };
+	constexpr glm::vec3 VEC3_RIGHT = glm::vec3{ 1.0f, 0.0f, 0.0f };
+	constexpr glm::vec3 VEC3_LEFT = glm::vec3{ -1.0f, 0.0f, 0.0f };
+	constexpr glm::vec3 VEC3_FORWARD = glm::vec3{ 0.0f, 0.0f, -1.0f };
+	constexpr glm::vec3 VEC3_BACKWARD = glm::vec3{ 0.0f, 0.0f, 1.0f };
+
 }

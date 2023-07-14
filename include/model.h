@@ -17,6 +17,7 @@
 
 #include "mesh.h"
 #include "pipeline.h"
+#include "settings.h"
 
 namespace gpr5300
 {
@@ -26,6 +27,12 @@ namespace gpr5300
     {
         glm::mat4 model{};
         glm::mat4 normal{};
+
+        void SetObject(
+            glm::vec3 position = VEC3_ZERO, 
+            glm::vec3 rotationAxis = VEC3_UP, 
+            float angle = 0.0f,
+            glm::vec3 scale = VEC3_ONE);
     };
 
     class Model

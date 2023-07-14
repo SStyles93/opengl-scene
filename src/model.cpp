@@ -50,6 +50,16 @@ namespace gpr5300
 		return textureID;
 	}
 
+	void ModelMatrices::SetObject(glm::vec3 position, glm::vec3 rotationAxis,float angle, glm::vec3 scale)
+	{
+		glm::mat4 model = glm::mat4(1.0f);
+		model = glm::translate(model, position);
+		model = glm::rotate(model, glm::radians(angle), glm::normalize(rotationAxis));
+		model = glm::scale(model, scale);
+		this->model = model;
+		this->normal = glm::transpose(glm::inverse(model));
+	}
+
 	Model::Model()
 	{
 		gammaCorrection = false;
