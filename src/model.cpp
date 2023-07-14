@@ -1,8 +1,14 @@
 #include "model.h"
 
+#include <span>
+
+#include "camera.h"
+#include "camera.h"
+#include "camera.h"
+#include "camera.h"
+
 namespace gpr5300
 {
-
 	unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma = false)
 	{
 		std::string filename = std::string(path);
@@ -61,10 +67,10 @@ namespace gpr5300
 			meshes[i].Draw(pipeline);
 	}
 
-	void Model::DrawInstances(Pipeline& pipeline, ModelMatrices* modelMatrices, const int count)
+	void Model::DrawInstances(Pipeline& pipeline, std::span<const ModelMatrices> modelMatrices)
 	{
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, count * sizeof(ModelMatrices), modelMatrices);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, static_cast<GLsizeiptr>(modelMatrices.size_bytes()), modelMatrices.data());
 
 		for (unsigned int i = 0; i < meshes.size(); i++)
 		{
@@ -72,29 +78,30 @@ namespace gpr5300
 			glBindVertexArray(meshes[i].VAO);
 			glDrawElementsInstanced(
 				GL_TRIANGLES,
-				static_cast<unsigned int>(meshes[i].indices.size()),
-				GL_UNSIGNED_INT, 0, count);
+				static_cast<GLsizei>(meshes[i].indices.size()),
+				GL_UNSIGNED_INT, nullptr, static_cast<GLsizei>(modelMatrices.size()));
 			glBindVertexArray(0);
 		}
 	}
 
-	void Model::DrawInstances(Pipeline& pipeline, ModelMatrices* modelMatrices, const int count, const glm::mat4 projection, const glm::mat4 view)
+	void Model::DrawInstances(Pipeline& pipeline, std::span<ModelMatrices> modelMatrices, const int count,
+	                          const glm::mat4 projection, const glm::mat4 view)
 	{
 		pipeline.use();
 		pipeline.setMat4("projection", projection);
 		pipeline.setMat4("view", view);
 
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, count * sizeof(ModelMatrices), modelMatrices);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, static_cast<GLsizeiptr>(modelMatrices.size_bytes()), modelMatrices.data());
 
-		for (unsigned int i = 0; i < meshes.size(); i++)
+		for (auto& mesh : meshes)
 		{
-			meshes[i].BindMaterial(pipeline);
-			glBindVertexArray(meshes[i].VAO);
+			mesh.BindMaterial(pipeline);
+			glBindVertexArray(mesh.VAO);
 			glDrawElementsInstanced(
 				GL_TRIANGLES,
-				static_cast<unsigned int>(meshes[i].indices.size()),
-				GL_UNSIGNED_INT, 0, count);
+				static_cast<GLsizei>(mesh.indices.size()),
+				GL_UNSIGNED_INT, nullptr, count);
 			glBindVertexArray(0);
 		}
 	}
@@ -110,15 +117,16 @@ namespace gpr5300
 			glBindVertexArray(meshes[i].VAO);
 			glDrawElementsInstanced(
 				GL_TRIANGLES,
-				static_cast<unsigned int>(meshes[i].indices.size()),
-				GL_UNSIGNED_INT, 0, count);
+				static_cast<GLsizei>(meshes[i].indices.size()),
+				GL_UNSIGNED_INT, nullptr, count);
 			assert(glGetError() == 0);
 			glBindVertexArray(0);
 			assert(glGetError() == 0);
 		}
 	}
 
-	void Model::DrawStaticInstances(Pipeline& pipeline, const int count, const glm::mat4 projection, const glm::mat4 view)
+	void Model::DrawStaticInstances(Pipeline& pipeline, const int count, const glm::mat4 projection,
+	                                const glm::mat4 view)
 	{
 		pipeline.use();
 		pipeline.setMat4("projection", projection);
@@ -130,20 +138,41 @@ namespace gpr5300
 			glBindVertexArray(meshes[i].VAO);
 			glDrawElementsInstanced(
 				GL_TRIANGLES,
-				static_cast<unsigned int>(meshes[i].indices.size()),
-				GL_UNSIGNED_INT, 0, count);
+				static_cast<GLsizei>(meshes[i].indices.size()),
+				GL_UNSIGNED_INT, nullptr, count);
 			glBindVertexArray(0);
 		}
 	}
 
-	void Model::SetUpVBO(ModelMatrices* modelMatrices,const int count)
+	void Model::DrawShadow(std::span<const ModelMatrices> modelMatrices) const
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, static_cast<GLsizeiptr>(modelMatrices.size_bytes()), modelMatrices.data());
+		glEnable(GL_DEPTH_CLAMP);
+
+		for (unsigned int i = 0; i < meshes.size(); i++)
+		{
+			glBindVertexArray(meshes[i].VAO);
+			assert(glGetError() == 0);
+			glDrawElementsInstanced(
+				GL_TRIANGLES,
+				static_cast<GLsizei>(meshes[i].indices.size()),
+				GL_UNSIGNED_INT, nullptr, modelMatrices.size());
+			glBindVertexArray(0);
+		}
+
+		glDisable(GL_DEPTH_CLAMP);
+	}
+
+	void Model::SetUpVBO(std::span<ModelMatrices> modelMatrices, const int count)
 	{
 		if (VBO != 0)
 			glDeleteBuffers(1, &VBO);
 
 		glGenBuffers(1, &VBO);
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, count * sizeof(ModelMatrices), &modelMatrices[0], GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(modelMatrices.size_bytes()), modelMatrices.data(),
+		             GL_STATIC_DRAW);
 
 		for (unsigned int i = 0; i < meshes.size(); i++)
 		{
@@ -152,11 +181,14 @@ namespace gpr5300
 			glEnableVertexAttribArray(3);
 			glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), nullptr);
 			glEnableVertexAttribArray(4);
-			glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(sizeof(glm::vec4)));
+			glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices),
+			                      reinterpret_cast<void*>(sizeof(glm::vec4)));
 			glEnableVertexAttribArray(5);
-			glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(2 * sizeof(glm::vec4)));
+			glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices),
+			                      reinterpret_cast<void*>(2 * sizeof(glm::vec4)));
 			glEnableVertexAttribArray(6);
-			glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(3 * sizeof(glm::vec4)));
+			glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices),
+			                      reinterpret_cast<void*>(3 * sizeof(glm::vec4)));
 
 			glVertexAttribDivisor(3, 1);
 			glVertexAttribDivisor(4, 1);
@@ -164,13 +196,17 @@ namespace gpr5300
 			glVertexAttribDivisor(6, 1);
 
 			glEnableVertexAttribArray(7);
-			glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(sizeof(glm::mat4)));
+			glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices),
+			                      reinterpret_cast<void*>(sizeof(glm::mat4)));
 			glEnableVertexAttribArray(8);
-			glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(sizeof(glm::mat4) + sizeof(glm::vec4)));
+			glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices),
+			                      reinterpret_cast<void*>(sizeof(glm::mat4) + sizeof(glm::vec4)));
 			glEnableVertexAttribArray(9);
-			glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(sizeof(glm::mat4) + 2 * sizeof(glm::vec4)));
+			glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices),
+			                      reinterpret_cast<void*>(sizeof(glm::mat4) + 2 * sizeof(glm::vec4)));
 			glEnableVertexAttribArray(10);
-			glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices), reinterpret_cast<void*>(sizeof(glm::mat4) + 3 * sizeof(glm::vec4)));
+			glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, sizeof(ModelMatrices),
+			                      reinterpret_cast<void*>(sizeof(glm::mat4) + 3 * sizeof(glm::vec4)));
 
 			glVertexAttribDivisor(7, 1);
 			glVertexAttribDivisor(8, 1);
@@ -186,7 +222,8 @@ namespace gpr5300
 	{
 		// read file via ASSIMP
 		Assimp::Importer importer;
-		const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+		const aiScene* scene = importer.ReadFile(
+			path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 		// check for errors
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
 		{
@@ -216,7 +253,6 @@ namespace gpr5300
 		{
 			processNode(node->mChildren[i], scene);
 		}
-
 	}
 
 	Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
@@ -230,7 +266,8 @@ namespace gpr5300
 		for (unsigned int i = 0; i < mesh->mNumVertices; i++)
 		{
 			Vertex vertex;
-			glm::vec3 vector; // we declare a placeholder vector since assimp uses its own vector class that doesn't directly convert to glm's vec3 class so we transfer the data to this placeholder glm::vec3 first.
+			glm::vec3 vector;
+			// we declare a placeholder vector since assimp uses its own vector class that doesn't directly convert to glm's vec3 class so we transfer the data to this placeholder glm::vec3 first.
 			// positions
 			vector.x = mesh->mVertices[i].x;
 			vector.y = mesh->mVertices[i].y;
@@ -299,12 +336,13 @@ namespace gpr5300
 		std::vector<Texture> aoMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_ao");
 		textures.insert(textures.end(), aoMaps.begin(), aoMaps.end());
 		// 8. roughness map 
-		std::vector<Texture> roughnessMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE_ROUGHNESS, "texture_roughness");
+		std::vector<Texture> roughnessMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE_ROUGHNESS,
+		                                                          "texture_roughness");
 		textures.insert(textures.end(), roughnessMaps.begin(), roughnessMaps.end());
 		// 9. metallic map 
 		std::vector<Texture> metallicMaps = loadMaterialTextures(material, aiTextureType_METALNESS, "texture_metallic");
 		textures.insert(textures.end(), metallicMaps.begin(), metallicMaps.end());
-			
+
 
 		// return a mesh object created from the extracted mesh data
 		return Mesh(vertices, indices, textures);
@@ -326,18 +364,21 @@ namespace gpr5300
 				if (std::strcmp(textures_loaded[j].path.data(), str.C_Str()) == 0)
 				{
 					textures.push_back(textures_loaded[j]);
-					skip = true; // a texture with the same filepath has already been loaded, continue to next one. (optimization)
+					skip = true;
+					// a texture with the same filepath has already been loaded, continue to next one. (optimization)
 					break;
 				}
 			}
 			if (!skip)
-			{   // if texture hasn't been loaded already, load it
+			{
+				// if texture hasn't been loaded already, load it
 				Texture texture;
 				texture.id = TextureFromFile(str.C_Str(), this->directory, false);
 				texture.type = typeName;
 				texture.path = str.C_Str();
 				textures.push_back(texture);
-				textures_loaded.push_back(texture);  // store it as texture loaded for entire model, to ensure we won't unnecessary load duplicate textures.
+				textures_loaded.push_back(texture);
+				// store it as texture loaded for entire model, to ensure we won't unnecessary load duplicate textures.
 			}
 		}
 		return textures;

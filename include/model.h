@@ -12,6 +12,7 @@
 #include <sstream>
 #include <iostream>
 #include <map>
+#include <span>
 #include <vector>
 
 #include "mesh.h"
@@ -40,12 +41,14 @@ namespace gpr5300
         Model(const char* path, bool gamma = false);
 
         void Draw(Pipeline& pipeline);
-        void DrawInstances(Pipeline& pipeline, ModelMatrices* modelMatrices, const int count);
-        void DrawInstances(Pipeline& pipeline, ModelMatrices* modelMatrices, const int count, const glm::mat4 projection, const glm::mat4 view);
+        void DrawInstances(Pipeline& pipeline, std::span<const ModelMatrices> modelMatrices);
+        void DrawInstances(Pipeline& pipeline, std::span <ModelMatrices> modelMatrices, const int count, const glm::mat4 projection, const glm::mat4 view);
         void DrawStaticInstances(Pipeline& pipeline, const int count);
         void DrawStaticInstances(Pipeline& pipeline, const int count, const glm::mat4 projection, const glm::mat4 view);
 
-        void SetUpVBO(ModelMatrices* modelMatrices, const int count);
+        void DrawShadow(std::span<const ModelMatrices> modelMatrices) const;
+
+        void SetUpVBO(std::span<ModelMatrices> modelMatrices, const int count);
 
     private:
 
