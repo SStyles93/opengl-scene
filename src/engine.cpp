@@ -113,6 +113,7 @@ namespace gpr5300
 				}
 				scene_->OnEvent(event);
 				ImGui_ImplSDL2_ProcessEvent(&event);
+
 			}
 
 			const uint8_t* keyboardState = SDL_GetKeyboardState(nullptr);
@@ -220,5 +221,6 @@ namespace gpr5300
 		SDL_GL_DeleteContext(glRenderContext_);
 		SDL_DestroyWindow(window_);
 		SDL_Quit();
+
 	}
 } // namespace gpr5300

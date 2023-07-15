@@ -4,12 +4,14 @@
 #include "scene.h"
 #include "object.h"
 #include "file_utility.h"
-#include "imgui.h"
 #include "settings.h"
+#include "bloom.h"
+
+#include "imgui.h"
 
 namespace gpr5300
 {
-	class IBL_shadow : public Scene
+	class ALL_with_Bloom : public Scene
 	{
 	public:
 		void Begin() override;
@@ -91,7 +93,6 @@ namespace gpr5300
 		unsigned int captureRBO;
 
 		//Shadows
-		glm::vec3 dirLightDirection{ -1.0f, -4.0f, -1.0f };
 		const unsigned int SHADOW_WIDTH = 4096, SHADOW_HEIGHT = 4096;
 		unsigned int depthMapFBO;
 		unsigned int depthMap;
@@ -99,19 +100,118 @@ namespace gpr5300
 		glm::mat4 lightSpaceMatrix;
 		float near_plane = 0.1f, far_plane = 200.0f;
 
-		float Bias = 0.002;
-		float NormalBias = 0.005f;
+		//BloomBlur
+		unsigned int hdrBuffer;
+		unsigned int hdrRBO;
+		unsigned int colorBuffers[2];
+		unsigned int pingpongFBO[2];
+		unsigned int pingpongColorbuffers[2];
+
+		BloomRenderer bloomRenderer;
+
+		bool bloom = true;
+		float exposure = 1.0f;
+		int programChoice = 3;
+		float bloomFilterRadius = 0.005f;
+
+		void RenderUpsamples(BloomRenderer& bloomRenderer, float filterRadius);
+		void RenderDownsamples(BloomRenderer& bloomRenderer, unsigned int srcTexture);
+		void RenderBloomTexture(BloomRenderer& bloomRenderer, unsigned int srcTexture, float filterRadius);
 	};
 
-	void IBL_shadow::DrawImGui()
+	void ALL_with_Bloom::DrawImGui()
 	{
-		ImGui::Begin("ShadowBias");
-		ImGui::SliderFloat("Bias", &Bias, 0.0f, 0.032f);
-		ImGui::SliderFloat("NormalBias", &NormalBias, 0.0f, 0.1f);
+		ImGui::Begin("Bloom & Blur");
+		ImGui::Checkbox("Bloom", &bloom);
+		ImGui::SliderFloat("Exposure", &exposure, 0.0f, 10.0f);
 		ImGui::End();
 	}
 
-	void IBL_shadow::SetUpPlane()
+	void ALL_with_Bloom::RenderDownsamples(BloomRenderer& bloomRenderer, unsigned int srcTexture)
+	{
+		const std::vector<bloomMip>& mipChain = bloomRenderer.mFBO.MipChain();
+
+		bloomRenderer.mDownsampleShader->use();
+		bloomRenderer.mDownsampleShader->setVec2("srcResolution", bloomRenderer.mSrcViewportSizeFloat);
+		if (bloomRenderer.mKarisAverageOnDownsample)
+		{
+			bloomRenderer.mDownsampleShader->setInt("mipLevel", 0);
+		}
+
+		// Bind srcTexture (HDR color buffer) as initial texture input
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, srcTexture);
+
+		// Progressively downsample through the mip chain
+		for (int i = 0; i < (int)mipChain.size(); i++)
+		{
+			const bloomMip& mip = mipChain[i];
+			glViewport(0, 0, mip.size.x, mip.size.y);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+				GL_TEXTURE_2D, mip.texture, 0);
+
+			// Render screen-filled quad of resolution of current mip
+			renderImage();
+
+			// Set current mip resolution as srcResolution for next iteration
+			bloomRenderer.mDownsampleShader->setVec2("srcResolution", mip.size);
+			// Set current mip as texture input for next iteration
+			glBindTexture(GL_TEXTURE_2D, mip.texture);
+			// Disable Karis average for consequent downsamples
+			if (i == 0) { bloomRenderer.mDownsampleShader->setInt("mipLevel", 1); }
+		}
+
+		glUseProgram(0);
+	}
+	void ALL_with_Bloom::RenderUpsamples(BloomRenderer& bloomRenderer, float filterRadius)
+	{
+		const std::vector<bloomMip>& mipChain = bloomRenderer.mFBO.MipChain();
+
+		bloomRenderer.mUpsampleShader->use();
+		bloomRenderer.mUpsampleShader->setFloat("filterRadius", filterRadius);
+
+		// Enable additive blending
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
+		glBlendEquation(GL_FUNC_ADD);
+
+		for (int i = (int)mipChain.size() - 1; i > 0; i--)
+		{
+			const bloomMip& mip = mipChain[i];
+			const bloomMip& nextMip = mipChain[i - 1];
+
+			// Bind viewport and texture from where to read
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, mip.texture);
+
+			// Set framebuffer render target (we write to this texture)
+			glViewport(0, 0, nextMip.size.x, nextMip.size.y);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+				GL_TEXTURE_2D, nextMip.texture, 0);
+
+			// Render screen-filled quad of resolution of current mip
+			renderImage();
+		}
+
+		// Disable additive blending
+		//glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+		glDisable(GL_BLEND);
+
+		glUseProgram(0);
+	}
+	void ALL_with_Bloom::RenderBloomTexture(BloomRenderer& bloomRenderer, unsigned int srcTexture, float filterRadius)
+	{
+		bloomRenderer.mFBO.BindForWriting();
+
+		RenderDownsamples(bloomRenderer, srcTexture);
+		RenderUpsamples(bloomRenderer, filterRadius);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		// Restore viewport
+		glViewport(0, 0, bloomRenderer.mSrcViewportSize.x, bloomRenderer.mSrcViewportSize.y);
+	}
+
+	void ALL_with_Bloom::SetUpPlane()
 	{
 		glGenVertexArrays(1, &planeVAO);
 		glGenBuffers(1, &planeVBO);
@@ -167,8 +267,7 @@ namespace gpr5300
 
 		glBindVertexArray(0);
 	}
-
-	void IBL_shadow::renderCube()
+	void ALL_with_Bloom::renderCube()
 	{
 		// initialize (if necessary)
 		if (cubeVAO == 0)
@@ -238,8 +337,7 @@ namespace gpr5300
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 	}
-
-	void IBL_shadow::renderImage()
+	void ALL_with_Bloom::renderImage()
 	{
 		if (quadVAO == 0)
 		{
@@ -265,8 +363,7 @@ namespace gpr5300
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		glBindVertexArray(0);
 	}
-
-	void IBL_shadow::renderEnvironmentCube()
+	void ALL_with_Bloom::renderEnvironmentCube()
 	{
 		// initialize (if necessary)
 		if (cubeVAO == 0)
@@ -336,13 +433,12 @@ namespace gpr5300
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 	}
-
-	float IBL_shadow::ourLerp(float a, float b, float f)
+	float ALL_with_Bloom::ourLerp(float a, float b, float f)
 	{
 		return a + f * (b - a);
 	}
 
-	void IBL_shadow::Begin()
+	void ALL_with_Bloom::Begin()
 	{
 #pragma region OpenGL Settings
 
@@ -369,11 +465,11 @@ namespace gpr5300
 		poulpe = Model("data/objects/poulpe/PoulpeSam.obj");
 
 		// wall
-		wallAlbedoMap = LoadTexture("data/textures/pbr/wall/albedo.png");
-		wallNormalMap = LoadTexture("data/textures/pbr/wall/normal.png");
-		wallMetallicMap = LoadTexture("data/textures/pbr/wall/metallic.png");
-		wallRoughnessMap = LoadTexture("data/textures/pbr/wall/roughness.png");
-		wallAOMap = LoadTexture("data/textures/pbr/wall/ao.png");
+		wallAlbedoMap = LoadTexture("data/textures/pbr/gold/albedo.png");
+		wallNormalMap = LoadTexture("data/textures/pbr/gold/normal.png");
+		wallMetallicMap = LoadTexture("data/textures/pbr/gold/metallic.png");
+		wallRoughnessMap = LoadTexture("data/textures/pbr/gold/roughness.png");
+		wallAOMap = LoadTexture("data/textures/pbr/gold/ao.png");
 
 
 #pragma region Shader Loading
@@ -382,52 +478,62 @@ namespace gpr5300
 
 		//Geometry pass 0
 		pipelines.emplace_back(
-			"data/shaders/IBL_shadow/geom_pass.vert",
-			"data/shaders/IBL_shadow/geom_pass.frag");
+			"data/shaders/ALL_with_Bloom/geom_pass.vert",
+			"data/shaders/ALL_with_Bloom/geom_pass.frag");
 		//Lighting pass 1
 		pipelines.emplace_back(
-			"data/shaders/IBL_shadow/light_pass.vert",
-			"data/shaders/IBL_shadow/light_pass.frag");
+			"data/shaders/ALL_with_Bloom/light_pass.vert",
+			"data/shaders/ALL_with_Bloom/light_pass.frag");
 		//Light Boxes 2
 		pipelines.emplace_back(
-			"data/shaders/IBL_shadow/simple_box.vert",
-			"data/shaders/IBL_shadow/simple_box.frag");
+			"data/shaders/ALL_with_Bloom/simple_box.vert",
+			"data/shaders/ALL_with_Bloom/simple_box.frag");
 		//SSAO 3
 		pipelines.emplace_back(
-			"data/shaders/IBL_shadow/ssao.vert",
-			"data/shaders/IBL_shadow/ssao.frag");
+			"data/shaders/ALL_with_Bloom/ssao.vert",
+			"data/shaders/ALL_with_Bloom/ssao.frag");
 		//SSAO 4
 		pipelines.emplace_back(
-			"data/shaders/IBL_shadow/ssao.vert",
-			"data/shaders/IBL_shadow/ssao_blur.frag");
+			"data/shaders/ALL_with_Bloom/ssao.vert",
+			"data/shaders/ALL_with_Bloom/ssao_blur.frag");
 
 		//IBL
 
 		//equirectangularToCubemapShader 5
 		pipelines.emplace_back(
-			"data/shaders/IBL_shadow/cubemap.vert",
-			"data/shaders/IBL_shadow/equirectangular_to_cubemap.frag");
+			"data/shaders/ALL_with_Bloom/cubemap.vert",
+			"data/shaders/ALL_with_Bloom/equirectangular_to_cubemap.frag");
 		//irradianceShader 6
 		pipelines.emplace_back(
-			"data/shaders/IBL_shadow/cubemap.vert",
-			"data/shaders/IBL_shadow/irradiance_convolution.frag");
+			"data/shaders/ALL_with_Bloom/cubemap.vert",
+			"data/shaders/ALL_with_Bloom/irradiance_convolution.frag");
 		//prefilterShader 7
 		pipelines.emplace_back(
-			"data/shaders/IBL_shadow/cubemap.vert",
-			"data/shaders/IBL_shadow/prefilter.frag");
+			"data/shaders/ALL_with_Bloom/cubemap.vert",
+			"data/shaders/ALL_with_Bloom/prefilter.frag");
 		//brdfShader 8
 		pipelines.emplace_back(
-			"data/shaders/IBL_shadow/brdf.vert",
-			"data/shaders/IBL_shadow/brdf.frag");
+			"data/shaders/ALL_with_Bloom/brdf.vert",
+			"data/shaders/ALL_with_Bloom/brdf.frag");
 		//backgroundShader 9
 		pipelines.emplace_back(
-			"data/shaders/IBL_shadow/background.vert",
-			"data/shaders/IBL_shadow/background.frag");
+			"data/shaders/ALL_with_Bloom/background.vert",
+			"data/shaders/ALL_with_Bloom/background.frag");
 
 		//Shadow 10
 		pipelines.emplace_back(
-			"data/shaders/IBL_shadow/shadow_map.vert",
-			"data/shaders/IBL_shadow/shadow_map.frag");
+			"data/shaders/ALL_with_Bloom/shadow_map.vert",
+			"data/shaders/ALL_with_Bloom/shadow_map.frag");
+
+		//Bloom_final 11
+		pipelines.emplace_back(
+			"data/shaders/ALL_with_Bloom/bloom_final.vert",
+			"data/shaders/ALL_with_Bloom/bloom_final.frag");
+
+		////Blur 11
+		//pipelines.emplace_back(
+		//	"data/shaders/ALL_with_Bloom/blur.vert",
+		//	"data/shaders/ALL_with_Bloom/blur.frag");
 
 #pragma endregion
 
@@ -457,6 +563,31 @@ namespace gpr5300
 		poulpe.SetUpVBO(poulpeMatrices, amount);
 
 		SetUpPlane();
+
+#pragma endregion
+
+#pragma region ShadowMap
+
+		// configure depth map FBO
+		// -----------------------
+		glGenFramebuffers(1, &depthMapFBO);
+		// create depth texture
+		glGenTextures(1, &depthMap);
+		glBindTexture(GL_TEXTURE_2D, depthMap);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
+			NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
+		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+		// attach depth texture as FBO's depth buffer
+		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+		glDrawBuffer(GL_NONE);
+		glReadBuffer(GL_NONE);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 #pragma endregion
 
@@ -531,8 +662,7 @@ namespace gpr5300
 		// tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
 		unsigned int attachments[5] = {
 			GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2,
-			GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 /*, GL_COLOR_ATTACHMENT5*/
-		};
+			GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 , /*GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6 */ };
 
 		glDrawBuffers(5, attachments);
 		// create and attach depth buffer (renderbuffer)
@@ -872,37 +1002,54 @@ namespace gpr5300
 		//}
 
 		lightPositions.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-		lightColors.push_back(glm::vec3(1.0f, 1.0f, 1.0f));
+		lightColors.push_back(glm::vec3(100.0f));
 
 #pragma endregion
 
-#pragma region ShadowMap
+#pragma region BloomBlur
 
-		// configure depth map FBO
-		// -----------------------
-		glGenFramebuffers(1, &depthMapFBO);
-		// create depth texture
-		glGenTextures(1, &depthMap);
-		glBindTexture(GL_TEXTURE_2D, depthMap);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
-			NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-		float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
-		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-		// attach depth texture as FBO's depth buffer
-		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
-		glDrawBuffer(GL_NONE);
-		glReadBuffer(GL_NONE);
+		//Bloom Blur
+		// create 2 floating point color buffers (1 for normal rendering, other for brightness threshold values)
+		glGenFramebuffers(1, &hdrBuffer);
+		glGenRenderbuffers(1, &hdrRBO);
+		glBindFramebuffer(GL_FRAMEBUFFER, hdrBuffer);
+		glBindRenderbuffer(GL_RENDERBUFFER, hdrRBO);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, SCREEN_WIDTH, SCREEN_HEIGHT);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, hdrRBO);
+
+		glGenTextures(2, colorBuffers);
+		for (unsigned int i = 0; i < 2; i++)
+		{
+			glBindTexture(GL_TEXTURE_2D, colorBuffers[i]);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);  // we clamp to the edge as the blur filter would otherwise sample repeated texture values!
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			// attach texture to framebuffer
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, colorBuffers[i], 0);
+		}
+		unsigned int bloomAttachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+		glDrawBuffers(2, bloomAttachments);
+		// finally check if framebuffer is complete
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+			std::cout << "Framebuffer not complete!" << std::endl;
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+		//FinalBlur
+		pipelines[11].use();
+		pipelines[11].setInt("scene", 0);
+		pipelines[11].setInt("bloomBlur", 1);
+
+		// bloom renderer
+		// --------------
+		bloomRenderer.Init(SCREEN_WIDTH, SCREEN_HEIGHT);
+
 #pragma endregion
+
 	}
 
-	void IBL_shadow::Update(float dt)
+	void ALL_with_Bloom::Update(float dt)
 	{
 		time_ += dt;
 
@@ -912,11 +1059,11 @@ namespace gpr5300
 
 		// 1. render depth of scene to texture (from light's perspective)
 		// --------------------------------------------------------------
-		glCullFace(GL_FRONT);
+		//glCullFace(GL_FRONT);
 		//lightProjection = glm::perspective(glm::radians(45.0f), (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT, near_plane, far_plane); // note that if you use a perspective projection matrix you'll have to change the light position as the current light position isn't enough to reflect the whole scene
 		lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
 		glm::vec3 target{ 0.0f, 0.0f, 0.0f };
-		lightView = glm::lookAt(target - dirLightDirection, target, glm::vec3(0.0, 1.0, 0.0));
+		lightView = glm::lookAt(target - DIRECTIONNAL_LIGHT_DIRECTION, target, glm::vec3(0.0, 1.0, 0.0));
 		lightSpaceMatrix = lightProjection * lightView;
 		// render scene from light's point of view
 		pipelines[10].use();
@@ -996,11 +1143,13 @@ namespace gpr5300
 		glBindTexture(GL_TEXTURE_2D, ssaoColorBuffer);
 		renderImage();
 
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 #pragma endregion
 
 #pragma region LightPass
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, hdrBuffer);
 
 		// 2. lighting pass: calculate lighting by iterating over a screen filled quad pixel-by-pixel using the gbuffer's content.
 		// -----------------------------------------------------------------------------------------------------------------------
@@ -1009,12 +1158,10 @@ namespace gpr5300
 		pipelines[1].setMat4("view", view);
 		pipelines[1].setMat4("projection", projection);
 		// set light uniforms
-		pipelines[1].setVec3("directionnalLightDir", dirLightDirection);
 		pipelines[1].setMat4("lightSpaceMatrix", lightSpaceMatrix);
+		pipelines[1].setVec3("directionnalLightDir", DIRECTIONNAL_LIGHT_DIRECTION);
+		pipelines[1].setVec3("directionnalLightColor", DIRECTIONNAL_LIGHT_COLOR);
 
-		//ImGui params
-		pipelines[1].setFloat("Bias", Bias);
-		pipelines[1].setFloat("NormalBias", NormalBias);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glActiveTexture(GL_TEXTURE0);
@@ -1066,6 +1213,8 @@ namespace gpr5300
 		// finally render quad
 		renderImage();
 
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 #pragma endregion
 
 #pragma region Light Boxes
@@ -1073,14 +1222,18 @@ namespace gpr5300
 		// 2.5. copy content of geometry's depth buffer to default framebuffer's depth buffer
 		// ----------------------------------------------------------------------------------
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // write to default framebuffer
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, hdrBuffer); // write to default framebuffer
 		// blit to default framebuffer. Note that this may or may not work as the internal formats of both the FBO and default framebuffer have to match.
 		// the internal formats are implementation defined. This works on all of my systems, but if it doesn't on yours you'll likely have to write to the 		
 		// depth buffer in another shader stage (or somehow see to match the default framebuffer's internal format with the FBO's internal format).
-		glBlitFramebuffer(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_DEPTH_BUFFER_BIT,
-			GL_NEAREST);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glBlitFramebuffer(0, 0,
+			SCREEN_WIDTH, SCREEN_HEIGHT,
+			0, 0,
+			SCREEN_WIDTH, SCREEN_HEIGHT,
+			GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, hdrBuffer);
+		////glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// 3. render lights on top of scene
 		// --------------------------------
@@ -1101,21 +1254,40 @@ namespace gpr5300
 
 #pragma region Environment CubeMap
 
-
 		// render skybox (render as last to prevent overdraw)
 		pipelines[9].use();
 		pipelines[9].setMat4("view", view);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
-		//glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap); // display irradiance map
-		//glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap); // display prefilter map
 
 		renderEnvironmentCube();
 
 #pragma endregion
+
+#pragma region BloomBlur
+
+		RenderBloomTexture(bloomRenderer, colorBuffers[1], bloomFilterRadius);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		// 3. now render floating point color buffer to 2D quad and tonemap HDR colors to default framebuffer's (clamped) color range
+		// --------------------------------------------------------------------------------------------------------------------------
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		pipelines[11].use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, colorBuffers[0]);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, bloomRenderer.BloomTexture());
+		pipelines[11].setFloat("exposure", exposure);
+		renderImage();
+
+#pragma endregion
+
+		assert(glGetError() == 0);
+
 	}
 
-	void IBL_shadow::End()
+	void ALL_with_Bloom::End()
 	{
 		glDeleteBuffers(1, &gBuffer);
 
@@ -1131,9 +1303,11 @@ namespace gpr5300
 
 		glDeleteVertexArrays(1, &planeVAO);
 		glDeleteBuffers(1, &planeVAO);
+
+		bloomRenderer.Destroy();
 	}
 
-	void IBL_shadow::DrawScene(Pipeline& pipeline, std::vector<Model> models)
+	void ALL_with_Bloom::DrawScene(Pipeline& pipeline, std::vector<Model> models)
 	{
 		//wall
 		pipeline.setInt("texture_diffuse1", 0);
@@ -1174,7 +1348,7 @@ namespace gpr5300
 int main(int argc, char** argv)
 {
 	gpr5300::Camera camera;
-	gpr5300::IBL_shadow scene;
+	gpr5300::ALL_with_Bloom scene;
 	scene.camera = &camera;
 	gpr5300::Engine engine(&scene);
 	engine.Run();

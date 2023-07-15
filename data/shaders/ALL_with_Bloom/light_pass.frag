@@ -23,6 +23,7 @@ uniform sampler2D shadowMap;
 
 uniform mat4 lightSpaceMatrix;
 uniform vec3 directionnalLightDir;
+uniform vec3 directionnalLightColor;
 
 struct Light {
     vec3 Position;
@@ -35,9 +36,6 @@ struct Light {
 const int NR_LIGHTS = 1;
 uniform Light lights[NR_LIGHTS];
 uniform vec3 camPos;
-
-uniform float Bias;
-uniform float NormalBias;
 
 const float PI = 3.14159265359;
 //------------------------------------------------
@@ -54,7 +52,8 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     // calculate bias (based on depth map resolution and slope)
     vec3 normal = normalize(texture(gNormal, TexCoords).rgb);
     vec3 lightDir = normalize(-directionnalLightDir);
-    float bias = max(NormalBias * (1.0 - dot(normal, lightDir)), Bias);
+    float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.002);
+    //float bias = Bias;
     // check whether current frag pos is in shadow
     // float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
     // PCF
@@ -182,11 +181,12 @@ void main()
     //IRRADIANCE for DirLight
     {
         // calculate per-light radiance
-        vec3 L = normalize(directionnalLightDir - WorldPos);
+        vec3 L = normalize(-directionnalLightDir);
         vec3 H = normalize(V + L);
-        float distance = length(directionnalLightDir -  WorldPos);
-        float attenuation = 1.0 / (distance * distance);
-        vec3 radiance = vec3(1.0f) * attenuation;
+        //float distance = length(directionnalLightDir - WorldPos);
+        //float attenuation = 1.0 / (distance * distance);
+        //TODO: UNIFORM FOR DIRLIGHT COLOR
+        vec3 radiance = vec3(directionnalLightColor) /* attenuation*/;
 
         // Cook-Torrance BRDF
         float NDF = DistributionGGX(N, H, texture(gARM, TexCoords).g);   
@@ -241,10 +241,10 @@ void main()
 
     vec3 color = ambient + Lo;
 
-    // HDR tonemapping
-    color = color / (color + vec3(1.0));
-    // gamma correct
-    color = pow(color, vec3(1.0/2.2)); 
+//    // HDR tonemapping
+//    color = color / (color + vec3(1.0));
+//    // gamma correct
+//    color = pow(color, vec3(1.0/2.2)); 
 
     FragColor = vec4(color, 1.0);
 }

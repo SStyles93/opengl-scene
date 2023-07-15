@@ -163,7 +163,6 @@ namespace gpr5300
 		for (unsigned int i = 0; i < meshes.size(); i++)
 		{
 			glBindVertexArray(meshes[i].VAO);
-			assert(glGetError() == 0);
 			glDrawElementsInstanced(
 				GL_TRIANGLES,
 				static_cast<GLsizei>(meshes[i].indices.size()),
