@@ -4,7 +4,8 @@ This project was done at the SAE Institute Geneva during the GPR5300-ComputerGra
 The project is a grouping of all the code done while learning [OpenGL](https://www.opengl.org/) and its creation 
 is resumed in my blogpost that you can find [here](https://sstyles93.github.io/).
 
-[Content](#content): [Data](#data) - [Include](#include) - [Main](#main) - [Src](#src) |
+[Content](#content):    
+[Data](#data) - [Include](#include) - [Main](#main) - [Src](#src) |
 ----- |
 [Project-Resume](#project-resume): [Main](#pr-main) |
 
