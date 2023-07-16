@@ -10,7 +10,7 @@ is resumed in my blogpost that you can find [here](https://sstyles93.github.io/)
 
 [Project-Resume](#project-resume): | 
 ----- |
-[Main](#pr-main) |
+[Include](#pr-include) | [Main](#pr-main) | [Source](#pr-source)
 
 
 ## Content
@@ -29,6 +29,32 @@ is resumed in my blogpost that you can find [here](https://sstyles93.github.io/)
 
 ## Project Resume:
 
+<details>
+<summary> <h3 id="pr-include"> Include: </h3> </summary>
+	<p> 
+
+-	[bloom.h](https://github.com/SStyles93/opengl-scene/blob/main/include/bloom.h)
+
+-	[camera](https://github.com/SStyles93/opengl-scene/blob/main/include/camera.h)
+
+-	[engine](https://github.com/SStyles93/opengl-scene/blob/main/include/engine.h)
+
+-	[file_utility](https://github.com/SStyles93/opengl-scene/blob/main/include/file_utility.h)
+
+-	[mesh](https://github.com/SStyles93/opengl-scene/blob/main/include/mesh.h)
+
+-	[model](https://github.com/SStyles93/opengl-scene/blob/main/include/model.h)
+
+-	[object](https://github.com/SStyles93/opengl-scene/blob/main/include/object.h)
+
+-	[pipeline](https://github.com/SStyles93/opengl-scene/blob/main/include/object.h)
+
+-	[scene](https://github.com/SStyles93/opengl-scene/blob/main/include/scene.h)
+
+-	[settings](https://github.com/SStyles93/opengl-scene/blob/main/include/settings.h)
+
+	</p>
+</details>
 <details>
 <summary> <h3 id="pr-main"> Main: </h3> </summary>
 	<p>         
@@ -104,6 +130,31 @@ is resumed in my blogpost that you can find [here](https://sstyles93.github.io/)
 
 -	[21_ALL_with_Bloom](https://github.com/SStyles93/opengl-scene/blob/main/main/21_ALL_with_Bloom.cpp)  
 	All previous elements with implementation of Blur and Bloom with Narkowicz ACES tone mapping.
+
+	</p>
+</details>
+
+<details>
+<summary> <h3 id="pr-source"> Source: </h3> </summary>
+	<p>  
+
+-	[camera](https://github.com/SStyles93/opengl-scene/blob/main/src/camera.cpp)
+
+-	[engine](https://github.com/SStyles93/opengl-scene/blob/main/src/engine.cpp)
+
+-	[file_utility](https://github.com/SStyles93/opengl-scene/blob/main/src/file_utility.cpp)
+
+-	[mesh](https://github.com/SStyles93/opengl-scene/blob/main/src/mesh.cpp)
+
+-	[model](https://github.com/SStyles93/opengl-scene/blob/main/src/model.cpp)
+
+-	[object](https://github.com/SStyles93/opengl-scene/blob/main/src/object.cpp)
+
+-	[pipeline](https://github.com/SStyles93/opengl-scene/blob/main/src/pipeline.cpp)
+
+-	[scene](https://github.com/SStyles93/opengl-scene/blob/main/src/scene.cpp)
+
+-	[stb_image](https://github.com/SStyles93/opengl-scene/blob/main/src/stb_image.cpp)
 
 	</p>
 </details>
