@@ -4,11 +4,11 @@ This project was done at the SAE Institute Geneva during the GPR5300-ComputerGra
 The project is a grouping of all the code done while learning [OpenGL](https://www.opengl.org/) and its creation 
 is resumed in my blogpost that you can find [here](https://sstyles93.github.io/).
 
-Col01 | Col02
------ | -----
-DataX | DataY
+[Content](#content) - [Project-Resume](#project-resume) |
+----- |
+OtherStuff |
 
-[Content](#content) - [Project-Resume](#project-resume)
+
 
 ## Content:
 
