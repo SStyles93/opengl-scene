@@ -65,10 +65,10 @@ namespace gpr5300
 		int NR_LIGHTS = 64;
 		std::vector<glm::vec3> lightPositions;
 		std::vector<glm::vec3> lightColors;
+		float pointLightPos[3]{ 0.0f, 12.0f, 0.0f };
+		float pointLightRadiusFromCenter = 3.0f;
+		float pointLightColor[3]{ 1.0f , 0.03f, 0.03f };
 		float LightColorPower = 20.0f;
-		float pointLightPos[3]{ 0.0f, 10.0f, 0.0f };
-		float pointLightRadiusFromCenter = 10.0f;
-		float pointLightColor[3]{ 1.0f , 1.0f, 1.0f };
 
 		//LIGHT
 		glm::vec3 DirectionalLightDirection{ -1.0f, -1.0f, -1.0f };
@@ -150,7 +150,7 @@ namespace gpr5300
 
 		//ImGui Params
 		void SetPointLights();
-		void RandomColour();
+		//void RandomColour();
 	};
 
 	void ALL_with_Bloom::DrawImGui()
@@ -159,23 +159,23 @@ namespace gpr5300
 
 		if (ImGui::CollapsingHeader("Directional Light Settings"))
 		{
-			ImGui::SliderFloat3("Directional Light Direction", dirLightDir, -1.0f, 1.0f);
-			ImGui::ColorEdit3("Directional Light Color", dirLightColor);
-			ImGui::SliderFloat("Directional Light Intensity", &dirLightPower, 0.0f, 100.0f);
+			ImGui::SliderFloat3("Direction", dirLightDir, -1.0f, 1.0f);
+			ImGui::ColorEdit3("Color", dirLightColor);
+			ImGui::SliderFloat("Intensity", &dirLightPower, 0.0f, 100.0f);
 		}
 
 		if (ImGui::CollapsingHeader("Point Light Settings"))
 		{
-			ImGui::SliderFloat3("Point Lights Position", pointLightPos, 0, 50);
-			ImGui::ColorEdit3("Point Light Color", pointLightColor);
-			if (ImGui::Button("Random Colour"))
+			ImGui::SliderFloat3("Position", pointLightPos, 0, 50);
+			ImGui::ColorEdit3("Color", pointLightColor);
+			/*if (ImGui::Button("Random Colour"))
 			{
 				RandomColour();
-			}
-			ImGui::SliderFloat("Point Lights radius", &pointLightRadiusFromCenter, 0, 50);
-			ImGui::SliderFloat("Point Light Intensity", &LightColorPower, 0.0f, 100.0f);
-			ImGui::SliderInt("Number of Point Lights", &NR_LIGHTS, 0, 128);
-			if (ImGui::Button("Set Point Lights"))
+			}*/
+			ImGui::SliderFloat("Radius", &pointLightRadiusFromCenter, 0, 50);
+			ImGui::SliderFloat("Intensity", &LightColorPower, 0.0f, 100.0f);
+			ImGui::SliderInt("Amount", &NR_LIGHTS, 0, 128);
+			if (ImGui::Button("Set"))
 			{
 				SetPointLights();
 			}
@@ -207,18 +207,23 @@ namespace gpr5300
 			lightColors[i] = glm::vec3(rColor, gColor, bColor);
 		}
 	}
-	void ALL_with_Bloom::RandomColour()
-	{
-		srand(static_cast<unsigned int>(time_));
-		for (unsigned int i = 0; i < NR_LIGHTS; i++)
-		{
-			// also calculate random color
-			float rColor = ((rand() % 10) / 10.0f); 
-			float gColor = ((rand() % 10)/ 10.0f); 
-			float bColor = ((rand() % 10) / 10.0f);
-			lightColors[i] = glm::vec3(rColor, gColor, bColor);
-		}
-	}
+	//void ALL_with_Bloom::RandomColour()
+	//{
+	//	srand(static_cast<unsigned int>(time_));
+	//	for (unsigned int i = 0; i < NR_LIGHTS; i++)
+	//	{
+	//		// also calculate random color
+	//		float rColor = ((rand() % 100) / 100.0f); 
+	//		float gColor = ((rand() % 100)/ 100.0f); 
+	//		float bColor = ((rand() % 100) / 100.0f);
+	//		pointLightColor[0] = rColor;
+	//		pointLightColor[1] = gColor;
+	//		pointLightColor[2] = bColor;
+	//		lightColors[i].r = pointLightColor[0];
+	//		lightColors[i].g = pointLightColor[1];
+	//		lightColors[i].b = pointLightColor[2];
+	//	}
+	//}
 
 	void ALL_with_Bloom::RenderDownsamples(BloomRenderer& bloomRenderer, unsigned int srcTexture)
 	{
@@ -533,6 +538,9 @@ namespace gpr5300
 
 	void ALL_with_Bloom::Begin()
 	{
+
+		camera->Position = glm::vec3(0.0f, 12.0f, 23.0f);
+
 #pragma region OpenGL Settings
 
 		// tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
@@ -553,6 +561,8 @@ namespace gpr5300
 
 #pragma endregion
 
+#pragma region Loading
+
 		backpack = Model("data/objects/backpack/backpack.obj");
 		rock = Model("data/objects/rock/rock.obj");
 		poulpe = Model("data/objects/poulpe/PoulpeSam.obj");
@@ -570,6 +580,7 @@ namespace gpr5300
 		gold.textures.emplace_back(LoadTexture("data/textures/pbr/gold/roughness.png"));
 		gold.textures.emplace_back(LoadTexture("data/textures/pbr/gold/ao.png"));
 
+#pragma endregion
 
 #pragma region Shader Loading
 

@@ -120,16 +120,16 @@ is resumed in my blogpost that you can find [here](https://sstyles93.github.io/)
 -	[file_utility.h](https://github.com/SStyles93/opengl-scene/blob/main/include/file_utility.h)  
 	File loading utility.
 
--	[mesh.h](https://github.com/SStyles93/opengl-scene/blob/main/include/mesh.h)
-	The mesh class header file.
+-	[mesh.h](https://github.com/SStyles93/opengl-scene/blob/main/include/mesh.h)  
+  	The mesh class header file.
 
--	[model.h](https://github.com/SStyles93/opengl-scene/blob/main/include/model.h)
+-	[model.h](https://github.com/SStyles93/opengl-scene/blob/main/include/model.h)  
 	The model class header file.
 
--	[object.h](https://github.com/SStyles93/opengl-scene/blob/main/include/object.h)
+-	[object.h](https://github.com/SStyles93/opengl-scene/blob/main/include/object.h)  
 	The object class header file.
 
--	[pipeline.h](https://github.com/SStyles93/opengl-scene/blob/main/include/object.h)
+-	[pipeline.h](https://github.com/SStyles93/opengl-scene/blob/main/include/object.h)  
 	The pipeline class header file.
 
 -	[scene.h](https://github.com/SStyles93/opengl-scene/blob/main/include/scene.h)  

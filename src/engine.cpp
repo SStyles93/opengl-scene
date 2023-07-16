@@ -60,7 +60,7 @@ namespace gpr5300
 					break;
 				}
 				case SDL_MOUSEMOTION:
-					if (event.button.button == SDL_PRESSED)
+					if (event.button.button == SDL_PRESSED && scene_->camera != nullptr)
 					{
 
 						event.motion.xrel *= sensitivity;
@@ -89,23 +89,30 @@ namespace gpr5300
 					}
 					break;
 				case SDL_KEYDOWN:
-					//Increase camera movement speed
-					if (event.key.keysym.scancode == CAM_SPEED_INCREASE_KEY && scene_->camera->MovementSpeed < MAX_CAM_SPEED)
+					if (scene_->camera != nullptr)
 					{
-						scene_->camera->MovementSpeed += 10;
-						std::cout << scene_->camera->MovementSpeed;
-					}else if (scene_->camera->MovementSpeed > MAX_CAM_SPEED)
-					{
-						scene_->camera->MovementSpeed = MAX_CAM_SPEED;
-					}
-					//Decrease camera movement speed 
-					if (event.key.keysym.scancode == CAM_SPEED_DECREASE_KEY && scene_->camera->MovementSpeed > MIN_CAM_SPEED)
-					{
-						scene_->camera->MovementSpeed -= 10;
-						std::cout << scene_->camera->MovementSpeed;
-					}else if(scene_->camera->MovementSpeed < MIN_CAM_SPEED)
-					{
-						scene_->camera->MovementSpeed = MIN_CAM_SPEED;
+
+
+						//Increase camera movement speed
+						if (event.key.keysym.scancode == CAM_SPEED_INCREASE_KEY && scene_->camera->MovementSpeed < MAX_CAM_SPEED)
+						{
+							scene_->camera->MovementSpeed += 10;
+							std::cout << scene_->camera->MovementSpeed;
+						}
+						else if (scene_->camera->MovementSpeed > MAX_CAM_SPEED)
+						{
+							scene_->camera->MovementSpeed = MAX_CAM_SPEED;
+						}
+						//Decrease camera movement speed 
+						if (event.key.keysym.scancode == CAM_SPEED_DECREASE_KEY && scene_->camera->MovementSpeed > MIN_CAM_SPEED)
+						{
+							scene_->camera->MovementSpeed -= 10;
+							std::cout << scene_->camera->MovementSpeed;
+						}
+						else if (scene_->camera->MovementSpeed < MIN_CAM_SPEED)
+						{
+							scene_->camera->MovementSpeed = MIN_CAM_SPEED;
+						}
 					}
 					break;
 				default:
@@ -115,27 +122,29 @@ namespace gpr5300
 				ImGui_ImplSDL2_ProcessEvent(&event);
 
 			}
-
-			const uint8_t* keyboardState = SDL_GetKeyboardState(nullptr);
-			Camera_Movement cameraMovementState
+			if (scene_->camera != nullptr)
 			{
-				.FORWARD = static_cast<bool>(keyboardState[SDL_SCANCODE_W]),
-				.BACKWARD = static_cast<bool>(keyboardState[SDL_SCANCODE_S]),
-				.LEFT = static_cast<bool>(keyboardState[SDL_SCANCODE_A]),
-				.RIGHT = static_cast<bool>(keyboardState[SDL_SCANCODE_D]),
-				.UP = static_cast<bool>(keyboardState[SDL_SCANCODE_E]),
-				.DOWN = static_cast<bool>(keyboardState[SDL_SCANCODE_Q])
-			};
 
-			if (cameraMovementState.HasMovement())
-			{
-				scene_->camera->ProcessKeyboard(cameraMovementState, dt.count());
+				const uint8_t* keyboardState = SDL_GetKeyboardState(nullptr);
+				Camera_Movement cameraMovementState
+				{
+					.FORWARD = static_cast<bool>(keyboardState[SDL_SCANCODE_W]),
+					.BACKWARD = static_cast<bool>(keyboardState[SDL_SCANCODE_S]),
+					.LEFT = static_cast<bool>(keyboardState[SDL_SCANCODE_A]),
+					.RIGHT = static_cast<bool>(keyboardState[SDL_SCANCODE_D]),
+					.UP = static_cast<bool>(keyboardState[SDL_SCANCODE_E]),
+					.DOWN = static_cast<bool>(keyboardState[SDL_SCANCODE_Q])
+				};
+
+				if (cameraMovementState.HasMovement())
+				{
+					scene_->camera->ProcessKeyboard(cameraMovementState, dt.count());
+				}
+
+				//Action given to the scene
+				scene_->action1 = static_cast<bool>(keyboardState[ACTION_KEY1]);
+				scene_->action2 = static_cast<bool>(keyboardState[ACTION_KEY2]);
 			}
-
-			//Action given to the scene
-			scene_->action1 = static_cast<bool>(keyboardState[ACTION_KEY1]);
-			scene_->action2 = static_cast<bool>(keyboardState[ACTION_KEY2]);
-
 			glClearColor(0, 0, 0, 0);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
