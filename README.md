@@ -9,10 +9,7 @@ is resumed in my blogpost that you can find [here](https://sstyles93.github.io/)
 OtherStuff |
 
 
-
-<details>
-<summary> <h2> Content: </h2> </summary>
-<p>         
+## Content
 
 -	[Data](https://github.com/SStyles93/opengl-scene/tree/main/data)  
 	Contains the shaders used for the project. You can download the textures and objects [here]().	
@@ -26,12 +23,13 @@ OtherStuff |
 -	[Src](https://github.com/SStyles93/opengl-scene/tree/main/src)  
 	Contains all the .cpp files
 
-</p>
-</details>
+
 
 ## Project Resume:
 
-### Mains
+<details>
+<summary> <h3> Content: </h3> </summary>
+	<p>         
 
 -	[00_triangle_test](https://github.com/SStyles93/opengl-scene/blob/main/main/00_triangle_test.cpp)  
 	Introduction to OpenGL, drawing the first triangle.
@@ -104,6 +102,10 @@ OtherStuff |
 
 -	[21_ALL_with_Bloom](https://github.com/SStyles93/opengl-scene/blob/main/main/21_ALL_with_Bloom.cpp)  
 	All previous elements with implementation of Blur and Bloom with Narkowicz ACES tone mapping.
+
+	</p>
+</details>
+
 
 Note that this project was built using [CMake](https://cmake.org/) and [VCPKG](https://vcpkg.io/en/).
 
