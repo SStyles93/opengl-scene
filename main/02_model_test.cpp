@@ -24,7 +24,7 @@ namespace gpr5300
 		//Pipeline init
 		modelPipeline_ = Pipeline("data/shaders/hello_model/model.vert", "data/shaders/hello_model/model.frag");
 
-		model_ = Model("data/objects/backpack.obj", false);
+		model_ = Model("data/objects/backpack/backpack.obj", false);
 	};
 	void model_test::End()
 	{

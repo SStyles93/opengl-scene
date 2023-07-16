@@ -345,8 +345,7 @@ namespace gpr5300
 		std::vector<Texture> aoMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_ao");
 		textures.insert(textures.end(), aoMaps.begin(), aoMaps.end());
 		// 8. roughness map 
-		std::vector<Texture> roughnessMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE_ROUGHNESS,
-		                                                          "texture_roughness");
+		std::vector<Texture> roughnessMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE_ROUGHNESS,"texture_roughness");
 		textures.insert(textures.end(), roughnessMaps.begin(), roughnessMaps.end());
 		// 9. metallic map 
 		std::vector<Texture> metallicMaps = loadMaterialTextures(material, aiTextureType_METALNESS, "texture_metallic");

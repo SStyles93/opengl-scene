@@ -40,6 +40,7 @@ namespace gpr5300
 		/// Set spot light
 		/// </summary>
 		/// <param name="pipeline">Sets the pipeline on which you want to add a light</param>
+		///	<param name="lightNumber">The Id of the light</param>
 		/// <param name="lightPosition">The position of the light</param>
 		/// <param name="lightAmbient">The ambient parameter</param>
 		/// <param name="lightDiffuse">The diffuse parameter</param>
@@ -48,7 +49,7 @@ namespace gpr5300
 		/// <param name="lightLinear">The light linear value</param>
 		/// <param name="lightQuadratic">The light quadratic value</param>
 		void SetLight(
-			Pipeline pipeline, glm::vec3 lightPosition,
+			Pipeline pipeline, int lightNumber, glm::vec3 lightPosition,
 			glm::vec3 lightAmbient, glm::vec3 lightDiffuse, glm::vec3 lightSpecular,
 			float lightConstant, float lightLinear, float lightQuadratic);
 		/// <summary>
@@ -157,18 +158,18 @@ namespace gpr5300
 		pipeline.setVec3("dirLight.specular", lightSpecular);
 	}
 	void light_test::SetLight(
-		Pipeline pipeline, glm::vec3 lightPosition,
+		Pipeline pipeline, int lightNumber, glm::vec3 lightPosition,
 		glm::vec3 lightAmbient, glm::vec3 lightDiffuse, glm::vec3 lightSpecular,
 		float lightConstant, float lightLinear, float lightQuadratic)
 	{
 		//Set the light's values
-		pipeline.setVec3(fmt::format("pointLights{}.position", lightCount), lightPosition);
-		pipeline.setVec3(fmt::format("pointLights{}.ambient", lightCount), lightAmbient);
-		pipeline.setVec3(fmt::format("pointLights{}.diffuse", lightCount), lightDiffuse);
-		pipeline.setVec3(fmt::format("pointLights{}.specular", lightCount), lightSpecular);
-		pipeline.setFloat(fmt::format("pointLights{}.constant", lightCount), lightConstant);
-		pipeline.setFloat(fmt::format("pointLights{}.linear", lightCount), lightLinear);
-		pipeline.setFloat(fmt::format("pointLights{}.quadratic", lightCount), lightQuadratic);
+		pipeline.setVec3(fmt::format("pointLights[{}].position", lightNumber), lightPosition);
+		pipeline.setVec3(fmt::format("pointLights[{}].ambient", lightNumber), lightAmbient);
+		pipeline.setVec3(fmt::format("pointLights[{}].diffuse", lightNumber), lightDiffuse);
+		pipeline.setVec3(fmt::format("pointLights[{}].specular", lightNumber), lightSpecular);
+		pipeline.setFloat(fmt::format("pointLights[{}].constant", lightNumber), lightConstant);
+		pipeline.setFloat(fmt::format("pointLights[{}].linear", lightNumber), lightLinear);
+		pipeline.setFloat(fmt::format("pointLights[{}].quadratic", lightNumber), lightQuadratic);
 	}
 	void light_test::SetLight(Pipeline pipeline, glm::vec3 lightPosition, glm::vec3 lightDirection,
 		glm::vec3 lightAmbient, glm::vec3 lightDiffuse, glm::vec3 lightSpecular,
@@ -324,7 +325,7 @@ namespace gpr5300
 		for (size_t i = 0; i < lightCount; i++)
 		{
 			SetLight(
-				lightingShader, pointLightPositions[i],
+				lightingShader,i, pointLightPositions[i],
 				pointLightAmbient, pointLightDiffuse, pointLightSpecular,
 				pointLightConstant, pointLightLinear, pointLightQuadratic);
 		}
