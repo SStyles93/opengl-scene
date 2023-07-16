@@ -10,7 +10,9 @@ OtherStuff |
 
 
 
-## Content:
+<details>
+<summary>## Content:</summary>
+<p>         
 
 -	[Data](https://github.com/SStyles93/opengl-scene/tree/main/data)  
 	Contains the shaders used for the project. You can download the textures and objects [here]().	
@@ -23,6 +25,9 @@ OtherStuff |
 
 -	[Src](https://github.com/SStyles93/opengl-scene/tree/main/src)  
 	Contains all the .cpp files
+
+</p>
+</details>
 
 ## Project Resume:
 
