@@ -465,8 +465,8 @@ namespace gpr5300
 
 #pragma region Objects setting
 
-		rock.SetUpVBO(modelMatrices1, amount);
-		backpack.SetUpVBO(modelMatrices, amount);
+		rock.SetUpVBO(modelMatrices1);
+		backpack.SetUpVBO(modelMatrices);
 
 		SetUpPlane();
 

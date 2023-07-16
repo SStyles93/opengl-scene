@@ -55,7 +55,7 @@ namespace gpr5300
 
         void DrawShadow(std::span<const ModelMatrices> modelMatrices) const;
 
-        void SetUpVBO(std::span<ModelMatrices> modelMatrices, const int count);
+        void SetUpVBO(std::span<ModelMatrices> modelMatrices);
 
     private:
 

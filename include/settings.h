@@ -39,8 +39,4 @@ namespace gpr5300
 	constexpr glm::vec3 VEC3_FORWARD = glm::vec3{ 0.0f, 0.0f, -1.0f };
 	constexpr glm::vec3 VEC3_BACKWARD = glm::vec3{ 0.0f, 0.0f, 1.0f };
 
-	//LIGHT
-	constexpr glm::vec3 DIRECTIONNAL_LIGHT_DIRECTION{ -1.0f, -4.0f, -1.0f };
-	constexpr glm::vec3 DIRECTIONNAL_LIGHT_COLOR{ 3.0f };
-
 }

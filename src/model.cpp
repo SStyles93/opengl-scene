@@ -173,7 +173,7 @@ namespace gpr5300
 		glDisable(GL_DEPTH_CLAMP);
 	}
 
-	void Model::SetUpVBO(std::span<ModelMatrices> modelMatrices, const int count)
+	void Model::SetUpVBO(std::span<ModelMatrices> modelMatrices)
 	{
 		if (VBO != 0)
 			glDeleteBuffers(1, &VBO);

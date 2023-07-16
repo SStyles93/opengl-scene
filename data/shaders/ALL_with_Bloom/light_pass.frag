@@ -33,8 +33,8 @@ struct Light {
     float Quadratic;
     float Radius;
 };
-const int NR_LIGHTS = 1;
-uniform Light lights[NR_LIGHTS];
+uniform int NR_LIGHTS;
+uniform Light lights[128];
 uniform vec3 camPos;
 
 const float PI = 3.14159265359;

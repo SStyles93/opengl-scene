@@ -303,8 +303,8 @@ namespace gpr5300
 #pragma endregion
 
 
-		rock.SetUpVBO(modelMatrices1, amount);
-		backpack.SetUpVBO(modelMatrices, amount);
+		rock.SetUpVBO(modelMatrices1);
+		backpack.SetUpVBO(modelMatrices);
 
 #pragma region gBuffer setting
 

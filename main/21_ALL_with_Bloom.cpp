@@ -11,6 +11,27 @@
 
 namespace gpr5300
 {
+	struct Material
+	{
+		std::vector<unsigned int> textures;
+
+		void setPipeline(Pipeline& pipeline)
+		{
+			pipeline.use();
+			pipeline.setInt("texture_diffuse1", 0);
+			pipeline.setInt("texture_normal1", 1);
+			pipeline.setInt("texture_metallic1", 2);
+			pipeline.setInt("texture_roughness1", 3);
+			pipeline.setInt("texture_ao1", 4);
+
+			for (int i = 0; i < textures.size(); i++)
+			{
+				glActiveTexture(GL_TEXTURE0 + i);
+				glBindTexture(GL_TEXTURE_2D, textures[i]);
+			}
+		}
+	};
+
 	class ALL_with_Bloom : public Scene
 	{
 	public:
@@ -40,10 +61,21 @@ namespace gpr5300
 		unsigned int cubeVAO = 0;
 		unsigned int cubeVBO = 0;
 
-		const unsigned int NR_LIGHTS = 1;
+		//PointLights
+		int NR_LIGHTS = 64;
 		std::vector<glm::vec3> lightPositions;
 		std::vector<glm::vec3> lightColors;
+		float LightColorPower = 20.0f;
+		float pointLightPos[3]{ 0.0f, 10.0f, 0.0f };
+		float pointLightRadiusFromCenter = 10.0f;
+		float pointLightColor[3]{ 1.0f , 1.0f, 1.0f };
 
+		//LIGHT
+		glm::vec3 DirectionalLightDirection{ -1.0f, -1.0f, -1.0f };
+		float dirLightDir[3]{ -1.0f, -1.0f, -1.0f };
+		glm::vec3 DirectionalLightColor{ 1.0f };
+		float dirLightColor[3]{ 1.0f , 1.0f, 1.0f };
+		float dirLightPower = 1.0f;
 
 		Model backpack;
 		std::vector<ModelMatrices> backpackMatrices;
@@ -52,7 +84,8 @@ namespace gpr5300
 		Model poulpe;
 		std::vector<ModelMatrices> poulpeMatrices;
 
-		unsigned int amount = 1;
+		unsigned int rockAmount = 40;
+		unsigned int backPackAmount = 10;
 
 		float time_{};
 
@@ -75,11 +108,8 @@ namespace gpr5300
 		unsigned int planeVAO = 0, planeVBO = 0;
 
 		//Floor
-		unsigned int wallAlbedoMap;
-		unsigned int wallNormalMap;
-		unsigned int wallMetallicMap;
-		unsigned int wallRoughnessMap;
-		unsigned int wallAOMap;
+		Material wall;
+		Material gold;
 
 		ModelMatrices planeMatrice;
 
@@ -99,6 +129,7 @@ namespace gpr5300
 		glm::mat4 lightProjection, lightView;
 		glm::mat4 lightSpaceMatrix;
 		float near_plane = 0.1f, far_plane = 200.0f;
+		float shadowFrustrum = 10.0f;
 
 		//BloomBlur
 		unsigned int hdrBuffer;
@@ -111,20 +142,82 @@ namespace gpr5300
 
 		bool bloom = true;
 		float exposure = 1.0f;
-		int programChoice = 3;
 		float bloomFilterRadius = 0.005f;
 
 		void RenderUpsamples(BloomRenderer& bloomRenderer, float filterRadius);
 		void RenderDownsamples(BloomRenderer& bloomRenderer, unsigned int srcTexture);
 		void RenderBloomTexture(BloomRenderer& bloomRenderer, unsigned int srcTexture, float filterRadius);
+
+		//ImGui Params
+		void SetPointLights();
+		void RandomColour();
 	};
 
 	void ALL_with_Bloom::DrawImGui()
 	{
-		ImGui::Begin("Bloom & Blur");
-		ImGui::Checkbox("Bloom", &bloom);
-		ImGui::SliderFloat("Exposure", &exposure, 0.0f, 10.0f);
+		ImGui::Begin("Scene Settings");
+
+		if (ImGui::CollapsingHeader("Directional Light Settings"))
+		{
+			ImGui::SliderFloat3("Directional Light Direction", dirLightDir, -1.0f, 1.0f);
+			ImGui::ColorEdit3("Directional Light Color", dirLightColor);
+			ImGui::SliderFloat("Directional Light Intensity", &dirLightPower, 0.0f, 100.0f);
+		}
+
+		if (ImGui::CollapsingHeader("Point Light Settings"))
+		{
+			ImGui::SliderFloat3("Point Lights Position", pointLightPos, 0, 50);
+			ImGui::ColorEdit3("Point Light Color", pointLightColor);
+			if (ImGui::Button("Random Colour"))
+			{
+				RandomColour();
+			}
+			ImGui::SliderFloat("Point Lights radius", &pointLightRadiusFromCenter, 0, 50);
+			ImGui::SliderFloat("Point Light Intensity", &LightColorPower, 0.0f, 100.0f);
+			ImGui::SliderInt("Number of Point Lights", &NR_LIGHTS, 0, 128);
+			if (ImGui::Button("Set Point Lights"))
+			{
+				SetPointLights();
+			}
+		}
+
 		ImGui::End();
+	}
+
+	void ALL_with_Bloom::SetPointLights()
+	{
+		lightPositions.resize(NR_LIGHTS);
+		lightColors.resize(NR_LIGHTS);
+		// lighting info
+		//-------------
+		srand(static_cast<unsigned int>(time_));
+		for (unsigned int i = 0; i < NR_LIGHTS; i++)
+		{
+
+			float radiusFromCenter = pointLightRadiusFromCenter;
+			float xPos = pointLightPos[0] + radiusFromCenter * std::sin(i);
+			float yPos = pointLightPos[1];
+			float zPos = pointLightPos[2] + radiusFromCenter * std::cos(i);
+			lightPositions[i] = glm::vec3(xPos, yPos, zPos);
+
+			// also calculate random color
+			float rColor = pointLightColor[0];
+			float gColor = pointLightColor[1];
+			float bColor = pointLightColor[2];
+			lightColors[i] = glm::vec3(rColor, gColor, bColor);
+		}
+	}
+	void ALL_with_Bloom::RandomColour()
+	{
+		srand(static_cast<unsigned int>(time_));
+		for (unsigned int i = 0; i < NR_LIGHTS; i++)
+		{
+			// also calculate random color
+			float rColor = ((rand() % 10) / 10.0f); 
+			float gColor = ((rand() % 10)/ 10.0f); 
+			float bColor = ((rand() % 10) / 10.0f);
+			lightColors[i] = glm::vec3(rColor, gColor, bColor);
+		}
 	}
 
 	void ALL_with_Bloom::RenderDownsamples(BloomRenderer& bloomRenderer, unsigned int srcTexture)
@@ -464,12 +557,18 @@ namespace gpr5300
 		rock = Model("data/objects/rock/rock.obj");
 		poulpe = Model("data/objects/poulpe/PoulpeSam.obj");
 
-		// wall
-		wallAlbedoMap = LoadTexture("data/textures/pbr/gold/albedo.png");
-		wallNormalMap = LoadTexture("data/textures/pbr/gold/normal.png");
-		wallMetallicMap = LoadTexture("data/textures/pbr/gold/metallic.png");
-		wallRoughnessMap = LoadTexture("data/textures/pbr/gold/roughness.png");
-		wallAOMap = LoadTexture("data/textures/pbr/gold/ao.png");
+		//Wall material
+		wall.textures.emplace_back(LoadTexture("data/textures/pbr/wall/albedo.png"));
+		wall.textures.emplace_back(LoadTexture("data/textures/pbr/wall/normal.png"));
+		wall.textures.emplace_back(LoadTexture("data/textures/pbr/wall/metallic.png"));
+		wall.textures.emplace_back(LoadTexture("data/textures/pbr/wall/roughness.png"));
+		wall.textures.emplace_back(LoadTexture("data/textures/pbr/wall/ao.png"));
+		//Gold
+		gold.textures.emplace_back(LoadTexture("data/textures/pbr/gold/albedo.png"));
+		gold.textures.emplace_back(LoadTexture("data/textures/pbr/gold/normal.png"));
+		gold.textures.emplace_back(LoadTexture("data/textures/pbr/gold/metallic.png"));
+		gold.textures.emplace_back(LoadTexture("data/textures/pbr/gold/roughness.png"));
+		gold.textures.emplace_back(LoadTexture("data/textures/pbr/gold/ao.png"));
 
 
 #pragma region Shader Loading
@@ -530,37 +629,49 @@ namespace gpr5300
 			"data/shaders/ALL_with_Bloom/bloom_final.vert",
 			"data/shaders/ALL_with_Bloom/bloom_final.frag");
 
-		////Blur 11
-		//pipelines.emplace_back(
-		//	"data/shaders/ALL_with_Bloom/blur.vert",
-		//	"data/shaders/ALL_with_Bloom/blur.frag");
-
 #pragma endregion
 
 #pragma region ModelMatrices setting
 
-		backpackMatrices.resize(amount);
-		rockMatrices.resize(amount);
-		poulpeMatrices.resize(amount);
+		backpackMatrices.resize(backPackAmount);
+		rockMatrices.resize(rockAmount);
 
-		for (unsigned int i = 0; i < amount; i++)
+		srand(13);
+		for (unsigned int i = 0; i < backPackAmount; i++)
 		{
-			backpackMatrices[i].SetObject(glm::vec3(5.0f, 1.5f + (i * 2.0f), 0.0f));
+			float radiusFromCenter = 10.0f;
 
-			rockMatrices[i].SetObject(glm::vec3(-5.0f, 1.5f + (i * 2.0f), 0.0f));
+			int maxRotation = 360;
+			int minRotation = 0;
+			int rotation = (rand() % (maxRotation - minRotation + 1) + maxRotation);
 
-			poulpeMatrices[i].SetObject(glm::vec3(0.0f, 8.5f, 0.0f));
+			backpackMatrices[i].SetObject(
+				glm::vec3(radiusFromCenter * std::sin(i), 1.5f, radiusFromCenter * std::cos(i)),
+				VEC3_UP, rotation);
 		}
 
-		planeMatrice.SetObject(VEC3_ZERO, VEC3_UP, 0.0f, glm::vec3(25.0f, 0.1f, 25.0f));
+		for (unsigned int i = 0; i < rockAmount; i++)
+		{
+			int maxRotation = 360;
+			int minRotation = 0;
+			int rotation = (rand() % (maxRotation - minRotation + 1) + maxRotation);
+
+			rockMatrices[i].SetObject(
+				glm::vec3(static_cast<float>(((rand() % 100) - 50)), 0.0f, static_cast<float>(((rand() % 100) - 50))),
+				VEC3_UP, rotation);
+		}
+
+		poulpeMatrices.resize(1);
+		poulpeMatrices[0].SetObject(glm::vec3(0.0f, 8.5f, 0.0f));
+		planeMatrice.SetObject(VEC3_ZERO, VEC3_UP, 0.0f, glm::vec3(50.0f, 0.1f, 50.0f));
 
 #pragma endregion
 
 #pragma region Objects setting
 
-		backpack.SetUpVBO(backpackMatrices, amount);
-		rock.SetUpVBO(rockMatrices, amount);
-		poulpe.SetUpVBO(poulpeMatrices, amount);
+		backpack.SetUpVBO(backpackMatrices);
+		rock.SetUpVBO(rockMatrices);
+		poulpe.SetUpVBO(poulpeMatrices);
 
 		SetUpPlane();
 
@@ -761,7 +872,7 @@ namespace gpr5300
 
 		glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
 		glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 2048, 2048);
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, captureRBO);
 
 		// pbr: load the HDR environment map
@@ -794,7 +905,7 @@ namespace gpr5300
 		glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
 		for (unsigned int i = 0; i < 6; ++i)
 		{
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, nullptr);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 2048, 2048, 0, GL_RGB, GL_FLOAT, nullptr);
 		}
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -824,7 +935,7 @@ namespace gpr5300
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, hdrTexture);
 
-		glViewport(0, 0, 512, 512); // don't forget to configure the viewport to the capture dimensions.
+		glViewport(0, 0, 2048, 2048); // don't forget to configure the viewport to the capture dimensions.
 		glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
 		for (unsigned int i = 0; i < 6; ++i)
 		{
@@ -935,7 +1046,7 @@ namespace gpr5300
 		glGenTextures(1, &brdfLUTTexture);
 		// pre-allocate enough memory for the LUT texture.
 		glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_FLOAT, 0);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 2048, 2048, 0, GL_RG, GL_FLOAT, 0);
 		// be sure to set wrapping mode to GL_CLAMP_TO_EDGE
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -945,10 +1056,10 @@ namespace gpr5300
 		// then re-configure capture framebuffer object and render screen-space quad with BRDF shader.
 		glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
 		glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 2048, 2048);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdfLUTTexture, 0);
 
-		glViewport(0, 0, 512, 512);
+		glViewport(0, 0, 2048, 2048);
 		pipelines[8].use();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		renderImage();
@@ -972,37 +1083,7 @@ namespace gpr5300
 
 #pragma region LightBoxes setting
 
-		// lighting info
-		// -------------
-		//srand(13);
-		//int xPos = -6;
-		//int yPos = 1;
-		//int zPos = 6;
-		//for (unsigned int i = 0; i < NR_LIGHTS; i++)
-		//{
-		//	if (xPos == 6)
-		//	{
-		//		zPos -= 6;
-		//		xPos = -6;
-		//	}
-
-		//	//// calculate slightly random offsets
-		//	//float xPos = static_cast<float>(((rand() % 100) / 100.0) * 6.0 - 3.0);
-		//	//float yPos = static_cast<float>(((rand() % 100) / 100.0) * 6.0 - 4.0);
-		//	//float zPos = static_cast<float>(((rand() % 100) / 100.0) * 6.0 - 3.0);
-		//	lightPositions.push_back(glm::vec3(xPos, yPos, zPos));
-
-		//	// also calculate random color
-		//	float rColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.)
-		//	float gColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.)
-		//	float bColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.)
-		//	lightColors.push_back(glm::vec3(rColor, gColor, bColor));
-
-		//	xPos += 3;
-		//}
-
-		lightPositions.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-		lightColors.push_back(glm::vec3(100.0f));
+		SetPointLights();
 
 #pragma endregion
 
@@ -1061,9 +1142,21 @@ namespace gpr5300
 		// --------------------------------------------------------------
 		//glCullFace(GL_FRONT);
 		//lightProjection = glm::perspective(glm::radians(45.0f), (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT, near_plane, far_plane); // note that if you use a perspective projection matrix you'll have to change the light position as the current light position isn't enough to reflect the whole scene
-		lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+
+		float ShadowFrustrum = shadowFrustrum;
+		lightProjection = glm::ortho(
+			-10.0f * ShadowFrustrum,
+			10.0f * ShadowFrustrum,
+			-10.0f * ShadowFrustrum,
+			10.0f * ShadowFrustrum,
+			near_plane, far_plane);
 		glm::vec3 target{ 0.0f, 0.0f, 0.0f };
-		lightView = glm::lookAt(target - DIRECTIONNAL_LIGHT_DIRECTION, target, glm::vec3(0.0, 1.0, 0.0));
+
+		DirectionalLightDirection.x = dirLightDir[0];
+		DirectionalLightDirection.y = dirLightDir[1];
+		DirectionalLightDirection.z = dirLightDir[2];
+
+		lightView = glm::lookAt(target - DirectionalLightDirection, target, glm::vec3(0.0, 1.0, 0.0));
 		lightSpaceMatrix = lightProjection * lightView;
 		// render scene from light's point of view
 		pipelines[10].use();
@@ -1157,10 +1250,20 @@ namespace gpr5300
 		pipelines[1].setVec3("camPos", camera->Position);
 		pipelines[1].setMat4("view", view);
 		pipelines[1].setMat4("projection", projection);
+		pipelines[1].setInt("NR_LIGHTS", NR_LIGHTS);
 		// set light uniforms
 		pipelines[1].setMat4("lightSpaceMatrix", lightSpaceMatrix);
-		pipelines[1].setVec3("directionnalLightDir", DIRECTIONNAL_LIGHT_DIRECTION);
-		pipelines[1].setVec3("directionnalLightColor", DIRECTIONNAL_LIGHT_COLOR);
+
+		//ImGui Parameters
+		DirectionalLightDirection.x = dirLightDir[0];
+		DirectionalLightDirection.y = dirLightDir[1];
+		DirectionalLightDirection.z = dirLightDir[2];
+		DirectionalLightColor.x = dirLightColor[0] * dirLightPower;
+		DirectionalLightColor.y = dirLightColor[1] * dirLightPower;
+		DirectionalLightColor.z = dirLightColor[2] * dirLightPower;
+
+		pipelines[1].setVec3("directionnalLightDir", DirectionalLightDirection);
+		pipelines[1].setVec3("directionnalLightColor", DirectionalLightColor);
 
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1192,11 +1295,25 @@ namespace gpr5300
 		// send light relevant uniforms
 		for (unsigned int i = 0; i < lightPositions.size(); i++)
 		{
+
+			//ImGui Parameters
+			float radiusFromCenter = pointLightRadiusFromCenter;
+			float xPos = pointLightPos[0] + radiusFromCenter * std::sin(i);
+			float yPos = pointLightPos[1];
+			float zPos = pointLightPos[2] + radiusFromCenter * std::cos(i);
+			lightPositions[i] = glm::vec3(xPos, yPos, zPos);
+
+			lightColors[i].x = pointLightColor[0]; 
+			lightColors[i].y = pointLightColor[1]; 
+			lightColors[i].z = pointLightColor[2]; 
+			glm::vec3 lightColor = lightColors[i];
+			lightColor *= LightColorPower;
+
 			//glm::vec3 lightPosView = glm::vec3(camera->GetViewMatrix() * glm::vec4(lightPositions[i], 1.0));
 			glm::vec3 lightPosView = lightPositions[i];
 			pipelines[1].use();
 			pipelines[1].setVec3("lights[" + std::to_string(i) + "].Position", lightPosView);
-			pipelines[1].setVec3("lights[" + std::to_string(i) + "].Color", lightColors[i]);
+			pipelines[1].setVec3("lights[" + std::to_string(i) + "].Color", lightColor);
 			// update attenuation parameters and calculate radius
 			const float constant = 1.0f;
 			// note that we don't send this to the shader, we assume it is always 1.0 (in our case)
@@ -1205,7 +1322,7 @@ namespace gpr5300
 			pipelines[1].setFloat("lights[" + std::to_string(i) + "].Linear", linear);
 			pipelines[1].setFloat("lights[" + std::to_string(i) + "].Quadratic", quadratic);
 			// then calculate radius of light volume/sphere
-			const float maxBrightness = std::fmaxf(std::fmaxf(lightColors[i].r, lightColors[i].g), lightColors[i].b);
+			const float maxBrightness = std::fmaxf(std::fmaxf(lightColor.r, lightColor.g), lightColor.b);
 			float radius = (-linear + std::sqrt(
 				linear * linear - 4 * quadratic * (constant - (256.0f / 5.0f) * maxBrightness))) / (2.0f * quadratic);
 			pipelines[1].setFloat("lights[" + std::to_string(i) + "].Radius", radius);
@@ -1243,11 +1360,25 @@ namespace gpr5300
 		pipelines[2].setMat4("view", view);
 		for (unsigned int i = 0; i < lightPositions.size(); i++)
 		{
+
+			//ImGui Parameters
+			float radiusFromCenter = pointLightRadiusFromCenter;
+			float xPos = pointLightPos[0] + radiusFromCenter * std::sin(i);
+			float yPos = pointLightPos[1];
+			float zPos = pointLightPos[2] + radiusFromCenter * std::cos(i);
+			lightPositions[i] = glm::vec3(xPos, yPos, zPos);
+
+			lightColors[i].x = pointLightColor[0];
+			lightColors[i].y = pointLightColor[1];
+			lightColors[i].z = pointLightColor[2];
+			glm::vec3 lightColor = lightColors[i];
+			lightColor *= LightColorPower;
+
 			model = glm::mat4(1.0f);
 			model = glm::translate(model, lightPositions[i]);
 			model = glm::scale(model, glm::vec3(0.125f));
 			pipelines[2].setMat4("model", model);
-			pipelines[2].setVec3("lightColor", lightColors[i]);
+			pipelines[2].setVec3("lightColor", lightColor);
 			renderCube();
 		}
 #pragma endregion
@@ -1309,37 +1440,18 @@ namespace gpr5300
 
 	void ALL_with_Bloom::DrawScene(Pipeline& pipeline, std::vector<Model> models)
 	{
-		//wall
-		pipeline.setInt("texture_diffuse1", 0);
-		pipeline.setInt("texture_normal1", 1);
-		pipeline.setInt("texture_metallic1", 2);
-		pipeline.setInt("texture_roughness1", 3);
-		pipeline.setInt("texture_ao1", 4);
 
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, wallAlbedoMap);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, wallNormalMap);
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, wallMetallicMap);
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, wallRoughnessMap);
-		glActiveTexture(GL_TEXTURE4);
-		glBindTexture(GL_TEXTURE_2D, wallAOMap);
-
+		wall.setPipeline(pipeline);
 		glBindVertexArray(planeVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glBindVertexArray(0);
 
-		//Draw objects
-		poulpe.DrawStaticInstances(pipeline, amount);
-		rock.DrawStaticInstances(pipeline, amount);
-		backpack.DrawStaticInstances(pipeline, amount);
+		rock.DrawStaticInstances(pipeline, rockAmount);
 
-		//for (auto& model : models)
-		//{
-		//	model.DrawStaticInstances(pipeline, amount);
-		//}
+		gold.setPipeline(pipeline);
+		//Draw objects
+		poulpe.DrawStaticInstances(pipeline, 1);
+		backpack.DrawStaticInstances(pipeline, backPackAmount);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
