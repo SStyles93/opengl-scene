@@ -10,7 +10,7 @@ is resumed in my blogpost that you can find [here](https://sstyles93.github.io/)
 
 [Project-Resume](#project-resume): | 
 ----- |
-[Include](#pr-include) | [Main](#pr-main) | [Source](#pr-source)
+[Include](#pr-include) - [Main](#pr-main) - [Source](#pr-source)
 
 
 ## Content
@@ -27,10 +27,10 @@ is resumed in my blogpost that you can find [here](https://sstyles93.github.io/)
 -	<h4 id="src"><a href="https://github.com/SStyles93/opengl-scene/tree/main/src">Src</a></h4>  
 	Contains all the .cpp files
 
-## Project Resume:
+## Project Resume
 
 <details>
-<summary> <h3 id="pr-include"> Include: </h3> </summary>
+<summary> <h3 id="pr-include"> Include </h3> </summary>
 	<p> 
 
 -	[bloom.h](https://github.com/SStyles93/opengl-scene/blob/main/include/bloom.h)
@@ -56,7 +56,7 @@ is resumed in my blogpost that you can find [here](https://sstyles93.github.io/)
 	</p>
 </details>
 <details>
-<summary> <h3 id="pr-main"> Main: </h3> </summary>
+<summary> <h3 id="pr-main"> Main </h3> </summary>
 	<p>         
 
 -	[00_triangle_test](https://github.com/SStyles93/opengl-scene/blob/main/main/00_triangle_test.cpp)  
@@ -135,7 +135,7 @@ is resumed in my blogpost that you can find [here](https://sstyles93.github.io/)
 </details>
 
 <details>
-<summary> <h3 id="pr-source"> Source: </h3> </summary>
+<summary> <h3 id="pr-source"> Source </h3> </summary>
 	<p>  
 
 -	[camera](https://github.com/SStyles93/opengl-scene/blob/main/src/camera.cpp)
