@@ -11,7 +11,7 @@ OtherStuff |
 
 
 <details>
-<summary>## Content:</summary>
+<summary> ## Content: </summary>
 <p>         
 
 -	[Data](https://github.com/SStyles93/opengl-scene/tree/main/data)  
