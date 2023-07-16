@@ -4,20 +4,20 @@ This project was done at the SAE Institute Geneva during the GPR5300-ComputerGra
 The project is a grouping of all the code done while learning [OpenGL](https://www.opengl.org/) and its creation 
 is resumed in my blogpost that you can find [here](https://sstyles93.github.io/).
 
-<ul>[Content](#content) - [Project-Resume](#project-resume)</ul>
+[Content](#content) - [Project-Resume](#project-resume)
 
 ## Content:
 
--	[Data](https://github.com/SStyles93/opengl-scene/tree/main/data)
+-	[Data](https://github.com/SStyles93/opengl-scene/tree/main/data)  
 	Contains the shaders used for the project. You can download the textures and objects [here]().	
 
--	[Include](https://github.com/SStyles93/opengl-scene/tree/main/include) 
+-	[Include](https://github.com/SStyles93/opengl-scene/tree/main/include)   
 	Contains all the header files
 
--	[Main](https://github.com/SStyles93/opengl-scene/tree/main/main)
+-	[Main](https://github.com/SStyles93/opengl-scene/tree/main/main)  
 	Contains all the Scenes that illustrate the different steps of OpenGL
 
--	[Src](https://github.com/SStyles93/opengl-scene/tree/main/src)
+-	[Src](https://github.com/SStyles93/opengl-scene/tree/main/src)  
 	Contains all the .cpp files
 
 ## Project Resume:
