@@ -11,11 +11,7 @@ is resumed in my blogpost that you can find [here](https://sstyles93.github.io/)
 
 ## Content
 
--	<h4 id="data">
-<a href="https://github.com/SStyles93/opengl-scene/tree/main/data">
-[Data]
-</a>
-</h4>  
+-	<h4 id="data"><a href="https://github.com/SStyles93/opengl-scene/tree/main/data">[Data]</a></h4>  
 	Contains the shaders used for the project. You can download the textures and objects [here]().	
 
 -	[Include](https://github.com/SStyles93/opengl-scene/tree/main/include)   
