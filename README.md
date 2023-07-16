@@ -4,9 +4,9 @@ This project was done at the SAE Institute Geneva during the GPR5300-ComputerGra
 The project is a grouping of all the code done while learning [OpenGL](https://www.opengl.org/) and its creation 
 is resumed in my blogpost that you can find [here](https://sstyles93.github.io/).
 
-[Content](#content) - [Project-Resume](#project-resume) |
+[Content](#content): [Main](#Main) |
 ----- |
-OtherStuff |
+[Project-Resume](#project-resume) |
 
 
 ## Content
@@ -28,7 +28,7 @@ OtherStuff |
 ## Project Resume:
 
 <details>
-<summary> <h3> Content: </h3> </summary>
+<summary> <h3 id="Main"> Main: </h3> </summary>
 	<p>         
 
 -	[00_triangle_test](https://github.com/SStyles93/opengl-scene/blob/main/main/00_triangle_test.cpp)  
