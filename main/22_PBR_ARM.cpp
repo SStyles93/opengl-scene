@@ -20,9 +20,7 @@ namespace gpr5300
 			pipeline.use();
 			pipeline.setInt("texture_diffuse1", 0);
 			pipeline.setInt("texture_normal1", 1);
-			pipeline.setInt("texture_metallic1", 2);
-			pipeline.setInt("texture_roughness1", 3);
-			pipeline.setInt("texture_ao1", 4);
+			pipeline.setInt("texture_arm1", 2);
 
 			for (int i = 0; i < textures.size(); i++)
 			{
@@ -32,7 +30,7 @@ namespace gpr5300
 		}
 	};
 
-	class ALL_with_Bloom : public Scene
+	class PBR_ARM : public Scene
 	{
 	public:
 		void Begin() override;
@@ -153,7 +151,7 @@ namespace gpr5300
 		//void RandomColour();
 	};
 
-	void ALL_with_Bloom::DrawImGui()
+	void PBR_ARM::DrawImGui()
 	{
 		ImGui::Begin("Scene Settings");
 
@@ -179,18 +177,12 @@ namespace gpr5300
 			{
 				SetPointLights();
 			}
-
-			if (ImGui::CollapsingHeader("Camera Settings"))
-			{
-				ImGui::Text("Use Key [1] or [2] to Lower/Increase Speed");
-				ImGui::SliderFloat("Speed", &camera->MovementSpeed, 0.1f, 100.0f);
-			}
 		}
 
 		ImGui::End();
 	}
 
-	void ALL_with_Bloom::SetPointLights()
+	void PBR_ARM::SetPointLights()
 	{
 		lightPositions.resize(NR_LIGHTS);
 		lightColors.resize(NR_LIGHTS);
@@ -213,25 +205,8 @@ namespace gpr5300
 			lightColors[i] = glm::vec3(rColor, gColor, bColor);
 		}
 	}
-	//void ALL_with_Bloom::RandomColour()
-	//{
-	//	srand(static_cast<unsigned int>(time_));
-	//	for (unsigned int i = 0; i < NR_LIGHTS; i++)
-	//	{
-	//		// also calculate random color
-	//		float rColor = ((rand() % 100) / 100.0f); 
-	//		float gColor = ((rand() % 100)/ 100.0f); 
-	//		float bColor = ((rand() % 100) / 100.0f);
-	//		pointLightColor[0] = rColor;
-	//		pointLightColor[1] = gColor;
-	//		pointLightColor[2] = bColor;
-	//		lightColors[i].r = pointLightColor[0];
-	//		lightColors[i].g = pointLightColor[1];
-	//		lightColors[i].b = pointLightColor[2];
-	//	}
-	//}
 
-	void ALL_with_Bloom::RenderDownsamples(BloomRenderer& bloomRenderer, unsigned int srcTexture)
+	void PBR_ARM::RenderDownsamples(BloomRenderer& bloomRenderer, unsigned int srcTexture)
 	{
 		const std::vector<bloomMip>& mipChain = bloomRenderer.mFBO.MipChain();
 
@@ -267,7 +242,7 @@ namespace gpr5300
 
 		glUseProgram(0);
 	}
-	void ALL_with_Bloom::RenderUpsamples(BloomRenderer& bloomRenderer, float filterRadius)
+	void PBR_ARM::RenderUpsamples(BloomRenderer& bloomRenderer, float filterRadius)
 	{
 		const std::vector<bloomMip>& mipChain = bloomRenderer.mFBO.MipChain();
 
@@ -303,7 +278,7 @@ namespace gpr5300
 
 		glUseProgram(0);
 	}
-	void ALL_with_Bloom::RenderBloomTexture(BloomRenderer& bloomRenderer, unsigned int srcTexture, float filterRadius)
+	void PBR_ARM::RenderBloomTexture(BloomRenderer& bloomRenderer, unsigned int srcTexture, float filterRadius)
 	{
 		bloomRenderer.mFBO.BindForWriting();
 
@@ -315,7 +290,7 @@ namespace gpr5300
 		glViewport(0, 0, bloomRenderer.mSrcViewportSize.x, bloomRenderer.mSrcViewportSize.y);
 	}
 
-	void ALL_with_Bloom::SetUpPlane()
+	void PBR_ARM::SetUpPlane()
 	{
 		glGenVertexArrays(1, &planeVAO);
 		glGenBuffers(1, &planeVBO);
@@ -371,7 +346,7 @@ namespace gpr5300
 
 		glBindVertexArray(0);
 	}
-	void ALL_with_Bloom::renderCube()
+	void PBR_ARM::renderCube()
 	{
 		// initialize (if necessary)
 		if (cubeVAO == 0)
@@ -441,7 +416,7 @@ namespace gpr5300
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 	}
-	void ALL_with_Bloom::renderImage()
+	void PBR_ARM::renderImage()
 	{
 		if (quadVAO == 0)
 		{
@@ -467,7 +442,7 @@ namespace gpr5300
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		glBindVertexArray(0);
 	}
-	void ALL_with_Bloom::renderEnvironmentCube()
+	void PBR_ARM::renderEnvironmentCube()
 	{
 		// initialize (if necessary)
 		if (cubeVAO == 0)
@@ -537,12 +512,12 @@ namespace gpr5300
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 	}
-	float ALL_with_Bloom::ourLerp(float a, float b, float f)
+	float PBR_ARM::ourLerp(float a, float b, float f)
 	{
 		return a + f * (b - a);
 	}
 
-	void ALL_with_Bloom::Begin()
+	void PBR_ARM::Begin()
 	{
 
 		camera->Position = glm::vec3(0.0f, 12.0f, 23.0f);
@@ -569,9 +544,9 @@ namespace gpr5300
 
 #pragma region Loading
 
-		backpack = Model("data/objects/backpack/backpack.obj");
-		rock = Model("data/objects/rock/rock.obj");
-		poulpe = Model("data/objects/poulpe/PoulpeSam.obj");
+		backpack = Model("data/objects/gltf/backpack/backpack.gltf");
+		rock = Model("data/objects/gltf/rock/rock.gltf");
+		poulpe = Model("data/objects/gltf/poulpe/PoulpeSam.gltf");
 
 		//Wall material
 		wall.textures.emplace_back(LoadTexture("data/textures/pbr/wall/albedo.png"));
@@ -594,57 +569,57 @@ namespace gpr5300
 
 		//Geometry pass 0
 		pipelines.emplace_back(
-			"data/shaders/ALL_with_Bloom/geom_pass.vert",
-			"data/shaders/ALL_with_Bloom/geom_pass.frag");
+			"data/shaders/PBR_ARM/geom_pass_arm.vert",
+			"data/shaders/PBR_ARM/geom_pass_arm.frag");
 		//Lighting pass 1
 		pipelines.emplace_back(
-			"data/shaders/ALL_with_Bloom/light_pass.vert",
-			"data/shaders/ALL_with_Bloom/light_pass.frag");
+			"data/shaders/PBR_ARM/light_pass.vert",
+			"data/shaders/PBR_ARM/light_pass.frag");
 		//Light Boxes 2
 		pipelines.emplace_back(
-			"data/shaders/ALL_with_Bloom/simple_box.vert",
-			"data/shaders/ALL_with_Bloom/simple_box.frag");
+			"data/shaders/PBR_ARM/simple_box.vert",
+			"data/shaders/PBR_ARM/simple_box.frag");
 		//SSAO 3
 		pipelines.emplace_back(
-			"data/shaders/ALL_with_Bloom/ssao.vert",
-			"data/shaders/ALL_with_Bloom/ssao.frag");
+			"data/shaders/PBR_ARM/ssao.vert",
+			"data/shaders/PBR_ARM/ssao.frag");
 		//SSAO 4
 		pipelines.emplace_back(
-			"data/shaders/ALL_with_Bloom/ssao.vert",
-			"data/shaders/ALL_with_Bloom/ssao_blur.frag");
+			"data/shaders/PBR_ARM/ssao.vert",
+			"data/shaders/PBR_ARM/ssao_blur.frag");
 
 		//IBL
 
 		//equirectangularToCubemapShader 5
 		pipelines.emplace_back(
-			"data/shaders/ALL_with_Bloom/cubemap.vert",
-			"data/shaders/ALL_with_Bloom/equirectangular_to_cubemap.frag");
+			"data/shaders/PBR_ARM/cubemap.vert",
+			"data/shaders/PBR_ARM/equirectangular_to_cubemap.frag");
 		//irradianceShader 6
 		pipelines.emplace_back(
-			"data/shaders/ALL_with_Bloom/cubemap.vert",
-			"data/shaders/ALL_with_Bloom/irradiance_convolution.frag");
+			"data/shaders/PBR_ARM/cubemap.vert",
+			"data/shaders/PBR_ARM/irradiance_convolution.frag");
 		//prefilterShader 7
 		pipelines.emplace_back(
-			"data/shaders/ALL_with_Bloom/cubemap.vert",
-			"data/shaders/ALL_with_Bloom/prefilter.frag");
+			"data/shaders/PBR_ARM/cubemap.vert",
+			"data/shaders/PBR_ARM/prefilter.frag");
 		//brdfShader 8
 		pipelines.emplace_back(
-			"data/shaders/ALL_with_Bloom/brdf.vert",
-			"data/shaders/ALL_with_Bloom/brdf.frag");
+			"data/shaders/PBR_ARM/brdf.vert",
+			"data/shaders/PBR_ARM/brdf.frag");
 		//backgroundShader 9
 		pipelines.emplace_back(
-			"data/shaders/ALL_with_Bloom/background.vert",
-			"data/shaders/ALL_with_Bloom/background.frag");
+			"data/shaders/PBR_ARM/background.vert",
+			"data/shaders/PBR_ARM/background.frag");
 
 		//Shadow 10
 		pipelines.emplace_back(
-			"data/shaders/ALL_with_Bloom/shadow_map.vert",
-			"data/shaders/ALL_with_Bloom/shadow_map.frag");
+			"data/shaders/PBR_ARM/shadow_map.vert",
+			"data/shaders/PBR_ARM/shadow_map.frag");
 
 		//Bloom_final 11
 		pipelines.emplace_back(
-			"data/shaders/ALL_with_Bloom/bloom_final.vert",
-			"data/shaders/ALL_with_Bloom/bloom_final.frag");
+			"data/shaders/PBR_ARM/bloom_final.vert",
+			"data/shaders/PBR_ARM/bloom_final.frag");
 
 #pragma endregion
 
@@ -1147,7 +1122,7 @@ namespace gpr5300
 
 	}
 
-	void ALL_with_Bloom::Update(float dt)
+	void PBR_ARM::Update(float dt)
 	{
 		time_ += dt;
 
@@ -1435,7 +1410,7 @@ namespace gpr5300
 
 	}
 
-	void ALL_with_Bloom::End()
+	void PBR_ARM::End()
 	{
 		glDeleteBuffers(1, &gBuffer);
 
@@ -1455,7 +1430,7 @@ namespace gpr5300
 		bloomRenderer.Destroy();
 	}
 
-	void ALL_with_Bloom::DrawScene(Pipeline& pipeline, std::vector<Model> models)
+	void PBR_ARM::DrawScene(Pipeline& pipeline, std::vector<Model> models)
 	{
 
 		wall.setPipeline(pipeline);
@@ -1477,7 +1452,7 @@ namespace gpr5300
 int main(int argc, char** argv)
 {
 	gpr5300::Camera camera;
-	gpr5300::ALL_with_Bloom scene;
+	gpr5300::PBR_ARM scene;
 	scene.camera = &camera;
 	gpr5300::Engine engine(&scene);
 	engine.Run();

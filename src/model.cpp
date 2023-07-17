@@ -332,6 +332,8 @@ namespace gpr5300
 		// specular: texture_specularN
 		// normal: texture_normalN
 
+		
+
 		// 1. diffuse maps
 		std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
 		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
@@ -341,16 +343,27 @@ namespace gpr5300
 		// 3. normal maps
 		std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
 		textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
-		// 7. ao map 
-		std::vector<Texture> aoMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_ao");
-		textures.insert(textures.end(), aoMaps.begin(), aoMaps.end());
-		// 8. roughness map 
-		std::vector<Texture> roughnessMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE_ROUGHNESS,"texture_roughness");
-		textures.insert(textures.end(), roughnessMaps.begin(), roughnessMaps.end());
-		// 9. metallic map 
-		std::vector<Texture> metallicMaps = loadMaterialTextures(material, aiTextureType_METALNESS, "texture_metallic");
-		textures.insert(textures.end(), metallicMaps.begin(), metallicMaps.end());
 
+		if (material->GetTextureCount(aiTextureType_UNKNOWN) == 0)
+		{
+
+			// 4. ao map 
+			std::vector<Texture> aoMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_ao");
+			textures.insert(textures.end(), aoMaps.begin(), aoMaps.end());
+			// 5. roughness map 
+			std::vector<Texture> roughnessMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE_ROUGHNESS, "texture_roughness");
+			textures.insert(textures.end(), roughnessMaps.begin(), roughnessMaps.end());
+			// 6. metallic map 
+			std::vector<Texture> metallicMaps = loadMaterialTextures(material, aiTextureType_METALNESS, "texture_metallic");
+			textures.insert(textures.end(), metallicMaps.begin(), metallicMaps.end());
+
+		}
+		else
+		{
+			// 7 ARM
+			std::vector<Texture> armMaps = loadMaterialTextures(material, aiTextureType_UNKNOWN, "texture_arm");
+			textures.insert(textures.end(), armMaps.begin(), armMaps.end());
+		}
 
 		// return a mesh object created from the extracted mesh data
 		return Mesh(vertices, indices, textures);

@@ -42,7 +42,7 @@ namespace gpr5300
         // -------------------------
         pipeline = Pipeline("data/shaders/instancing/instancing.vert", "data/shaders/instancing/instancing.frag");
 
-        rock = Model("data/objects/rock.obj", false);
+        rock = Model("data/objects/rock/rock.obj", false);
 
         modelMatrices = new glm::mat4[amount];
         srand(static_cast<unsigned int>(time_)); // initialize random seed

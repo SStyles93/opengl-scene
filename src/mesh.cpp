@@ -38,6 +38,8 @@ namespace gpr5300
 		unsigned int metallicNr = 1;
 		unsigned int roughnessNr = 1;
 		unsigned int aoNr = 1;
+
+		unsigned int armNr = 1;
 		
 
 		for (unsigned int i = 0; i < textures.size(); i++)
@@ -51,7 +53,7 @@ namespace gpr5300
 			if (name == "texture_diffuse")
 				number = std::to_string(diffuseNr++);
 			else if (name == "texture_specular") continue;
-				//number = std::to_string(specularNr++); // transfer unsigned int to string
+			//number = std::to_string(specularNr++); // transfer unsigned int to string
 			else if (name == "texture_normal")
 				number = std::to_string(normalNr++); // transfer unsigned int to string
 			else if (name == "texture_height")
@@ -62,6 +64,8 @@ namespace gpr5300
 				number = std::to_string(roughnessNr++); // transfer unsigned int to string
 			else if (name == "texture_ao")
 				number = std::to_string(aoNr++); // transfer unsigned int to string
+			else if (name == "texture_arm")
+				number = std::to_string(armNr++);
 
 			assert(glGetError() == 0);
 			// now set the sampler to the correct texture unit
