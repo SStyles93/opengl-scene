@@ -12,7 +12,7 @@ is resumed in my blogpost that you can find [here](https://sstyles93.github.io/)
 ## Folders
 
 -	<h4 id="data"><a href="https://github.com/SStyles93/opengl-scene/tree/main/data">Data</a></h4>  
-	Contains the shaders used for the project. You can download the textures and objects [here]().	
+	Contains the shaders used for the project. You can download the textures and objects [here](https://drive.google.com/drive/u/0/folders/1r60pUaqA7q4aLQIBk-h2yQ0TdRas9ExQ).	
 
 -	<h4 id="include"><a href="https://github.com/SStyles93/opengl-scene/tree/main/include">Include</a></h4>  
 	Contains all the header files
